@@ -1,0 +1,44 @@
+name: chord_viewer
+description: Visor de canciones ChordPro para músicos en directo.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Estado global (Riverpod sin generación de código)
+  flutter_riverpod: ^2.5.1
+
+  # Almacenamiento local (metadatos de canciones y setlists)
+  hive_flutter: ^1.1.0
+
+  # Selector de archivos del sistema
+  file_picker: ^8.0.3
+
+  # Directorio de documentos de la app (para copiar archivos importados)
+  path_provider: ^2.1.3
+
+  # Permisos en Android (necesario en Android 9 y anteriores)
+  permission_handler: ^11.3.1
+
+  # Compartir archivos (exportar setlists)
+  share_plus: ^10.0.0
+
+  # Google Drive
+  google_sign_in: ^6.2.1
+  googleapis: ^13.2.0
+  # Cliente HTTP para autenticar peticiones a Drive (googleapis lo usa internamente,
+  # pero lo declaramos explícitamente porque creamos un BaseClient propio)
+  http: ^1.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
