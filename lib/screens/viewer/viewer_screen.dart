@@ -1,5 +1,6 @@
 // lib/screens/viewer/viewer_screen.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,6 +58,10 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
   double? _autoFitMultiplier;
   bool _autoFitDone = false;
 
+  // --- Botones de scroll táctiles ---
+  bool _scrollButtonsVisible = false;
+  Timer? _hideButtonsTimer;
+
   static const double _baseFontSize = 22.0;
   List<_SectionTarget> _sectionTargets = [];
 
@@ -79,6 +84,7 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
 
   @override
   void dispose() {
+    _hideButtonsTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -152,12 +158,62 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
                     viewportHeight: constraints.maxHeight,
                     overlapFraction: _overlapFraction,
                   ),
+
+                // Botón táctil superior-derecha: retroceder
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: _ScrollOverlayButton(
+                    icon: Icons.keyboard_arrow_up_rounded,
+                    visible: _scrollButtonsVisible,
+                    onPressed: () => _onScrollButtonPressed(isForward: false),
+                  ),
+                ),
+
+                // Botón táctil inferior-derecha: avanzar
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: _ScrollOverlayButton(
+                    icon: Icons.keyboard_arrow_down_rounded,
+                    visible: _scrollButtonsVisible,
+                    onPressed: () => _onScrollButtonPressed(isForward: true),
+                  ),
+                ),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Botones táctiles de scroll (overlay)
+  // ---------------------------------------------------------------------------
+
+  void _onScrollButtonPressed({required bool isForward}) {
+    if (!_scrollButtonsVisible) {
+      // Primer toque: solo revelar los botones
+      setState(() => _scrollButtonsVisible = true);
+      _resetHideTimer();
+      return;
+    }
+    // Botones ya visibles: ejecutar el scroll
+    final pedal = ref.read(settingsProvider).pedal;
+    if (isForward) {
+      _scrollForward(pedal);
+    } else {
+      _scrollBackward(pedal);
+    }
+    _resetHideTimer();
+  }
+
+  void _resetHideTimer() {
+    _hideButtonsTimer?.cancel();
+    _hideButtonsTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _scrollButtonsVisible = false);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -711,6 +767,43 @@ class _SectionTarget {
   final double offset;
   final String label;
   const _SectionTarget({required this.offset, required this.label});
+}
+
+// Botón semitransparente de scroll táctil
+class _ScrollOverlayButton extends StatelessWidget {
+  final IconData icon;
+  final bool visible;
+  final VoidCallback onPressed;
+
+  const _ScrollOverlayButton({
+    required this.icon,
+    required this.visible,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: AnimatedOpacity(
+        opacity: visible ? 0.55 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Icon(icon, color: Colors.white, size: 32),
+        ),
+      ),
+    );
+  }
 }
 
 // Bandas rojas en los laterales que marcan la zona de solape entre pantallas
