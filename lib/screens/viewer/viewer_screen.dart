@@ -177,6 +177,19 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
                     },
                   ),
 
+                // Barra de progreso del setlist
+                if (widget.setlistContext != null)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 5,
+                    child: _SetlistProgressBar(
+                      current: widget.setlistContext!.currentIndex + 1,
+                      total: widget.setlistContext!.setlist.songIds.length,
+                    ),
+                  ),
+
                 // Botón táctil superior-derecha: retroceder
                 Positioned(
                   top: 12,
@@ -924,6 +937,36 @@ class _BandRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// Barra de progreso del setlist: fondo amarillo + relleno azul proporcional al avance
+class _SetlistProgressBar extends StatelessWidget {
+  final int current; // posición actual (1-based)
+  final int total;   // total de canciones
+
+  const _SetlistProgressBar({required this.current, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = total > 0 ? (current / total).clamp(0.0, 1.0) : 0.0;
+
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (_, bc) => Stack(
+          children: [
+            Container(color: ViewerColors.chord), // amarillo (total)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: bc.maxWidth * progress,
+              child: Container(color: const Color(0xFF1E88E5)), // azul (progreso)
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
