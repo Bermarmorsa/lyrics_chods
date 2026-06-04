@@ -62,6 +62,9 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
   bool _scrollButtonsVisible = false;
   Timer? _hideButtonsTimer;
 
+  // --- Marcadores de avance (posiciones documento donde se hizo page-down) ---
+  final List<double> _advanceMarkers = [];
+
   static const double _baseFontSize = 22.0;
   List<_SectionTarget> _sectionTargets = [];
 
@@ -155,9 +158,23 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
                 ),
                 // Bandas de solape (solo cuando auto-fit está activo)
                 if (effectiveAutoFit != null)
-                  _OverlapBands(
-                    viewportHeight: constraints.maxHeight,
-                    overlapFraction: _overlapFraction,
+                  AnimatedBuilder(
+                    animation: _scrollController,
+                    builder: (_, __) {
+                      final offset = _scrollController.hasClients
+                          ? _scrollController.offset
+                          : 0.0;
+                      final maxExtent = _scrollController.hasClients
+                          ? _scrollController.position.maxScrollExtent
+                          : double.infinity;
+                      return _OverlapBands(
+                        viewportHeight: constraints.maxHeight,
+                        overlapFraction: _overlapFraction,
+                        advanceMarkers: List.unmodifiable(_advanceMarkers),
+                        scrollOffset: offset,
+                        atEnd: offset >= maxExtent - 10,
+                      );
+                    },
                   ),
 
                 // Botón táctil superior-derecha: retroceder
@@ -388,7 +405,15 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
       final fraction = effectiveAutoFit != null
           ? (1 - _overlapFraction)
           : pedal.scrollFraction;
-      _animateTo(pos.pixels + pos.viewportDimension * fraction);
+      final target = pos.pixels + pos.viewportDimension * fraction;
+      // Registrar posición de avance para la banda deslizante
+      if (effectiveAutoFit != null) {
+        final clamped = target.clamp(0.0, pos.maxScrollExtent);
+        if (clamped > 0 && !_advanceMarkers.contains(clamped)) {
+          setState(() => _advanceMarkers.add(clamped));
+        }
+      }
+      _animateTo(target);
     }
   }
 
@@ -807,52 +832,98 @@ class _ScrollOverlayButton extends StatelessWidget {
   }
 }
 
-// Bandas rojas en los laterales que marcan la zona de solape entre pantallas
+// Bandas laterales que marcan la zona de solape entre pantallas.
+// La banda inferior es fija en el viewport (próximo avance).
+// Las bandas históricas están ancladas al documento y se desplazan con el scroll.
 class _OverlapBands extends StatelessWidget {
   final double viewportHeight;
   final double overlapFraction;
+  final List<double> advanceMarkers; // posiciones documento de avances anteriores
+  final double scrollOffset;
+  final bool atEnd;
 
   const _OverlapBands({
     required this.viewportHeight,
     required this.overlapFraction,
+    required this.advanceMarkers,
+    required this.scrollOffset,
+    required this.atEnd,
   });
 
   @override
   Widget build(BuildContext context) {
     final bandHeight = viewportHeight * overlapFraction;
     const bandWidth = 6.0;
-    const color = Color(0xAAE53935); // rojo semitransparente
+    final color = atEnd
+        ? const Color(0xAA1E88E5) // azul al llegar al final
+        : const Color(0xAAE53935); // rojo el resto del tiempo
 
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: bandHeight,
-      child: IgnorePointer(
-        child: Row(
-          children: [
-            Container(
-              width: bandWidth,
-              decoration: const BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(3),
-                ),
-              ),
-            ),
-            const Spacer(),
-            Container(
-              width: bandWidth,
-              decoration: const BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(3),
-                ),
-              ),
-            ),
-          ],
+    return Stack(
+      children: [
+        // Banda fija en el fondo del viewport (próximo avance)
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: bandHeight,
+          child: IgnorePointer(child: _BandRow(color: color, bandWidth: bandWidth, topRounded: true)),
         ),
-      ),
+
+        // Bandas históricas: ancladas al documento, se desplazan con el scroll
+        for (final markerDocY in advanceMarkers) ...[
+          if (markerDocY - scrollOffset > -bandHeight &&
+              markerDocY - scrollOffset < viewportHeight)
+            Positioned(
+              top: markerDocY - scrollOffset,
+              left: 0,
+              right: 0,
+              height: bandHeight,
+              child: IgnorePointer(
+                child: _BandRow(
+                  color: color,
+                  bandWidth: bandWidth,
+                  topRounded: (markerDocY - scrollOffset) > 0,
+                ),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _BandRow extends StatelessWidget {
+  final Color color;
+  final double bandWidth;
+  final bool topRounded;
+
+  const _BandRow({
+    required this.color,
+    required this.bandWidth,
+    required this.topRounded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = topRounded ? const Radius.circular(3) : Radius.zero;
+    return Row(
+      children: [
+        Container(
+          width: bandWidth,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.only(topRight: radius),
+          ),
+        ),
+        const Spacer(),
+        Container(
+          width: bandWidth,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.only(topLeft: radius),
+          ),
+        ),
+      ],
     );
   }
 }
