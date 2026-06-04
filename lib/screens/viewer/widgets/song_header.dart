@@ -9,22 +9,26 @@ import '../../../core/theme/app_theme.dart';
 class SongHeader extends StatelessWidget {
   final Song song;
   final double fontSize;
+  final bool compact;
 
-  const SongHeader({super.key, required this.song, required this.fontSize});
+  const SongHeader({
+    super.key,
+    required this.song,
+    required this.fontSize,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (compact) return _buildCompact();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título
           Text(song.title, style: ViewerTextStyles.songTitle(fontSize)),
           const SizedBox(height: 4),
-          // Artista
           Text(song.artist, style: ViewerTextStyles.songArtist(fontSize)),
-          // Fila de metadatos opcionales
           if (song.key != null || song.capo > 0) ...[
             const SizedBox(height: 8),
             _MetaChips(song: song, fontSize: fontSize),
@@ -32,6 +36,35 @@ class SongHeader extends StatelessWidget {
           const SizedBox(height: 20),
           Divider(color: ViewerColors.separator, thickness: 1),
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompact() {
+    final parts = <String>[song.title];
+    if (song.artist.isNotEmpty) parts.add(song.artist);
+    if (song.key != null) parts.add(song.key!);
+    if (song.capo > 0) parts.add('Cejilla ${song.capo}');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            parts.join('  ·  '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ViewerColors.artist,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Divider(color: ViewerColors.separator, thickness: 1),
+          const SizedBox(height: 4),
         ],
       ),
     );

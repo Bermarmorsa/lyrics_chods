@@ -145,7 +145,8 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
                       if (index == 0) {
                         return SongHeader(
                           song: displaySong,
-                          fontSize: _showUi ? fontSize : fontSize * 0.5,
+                          fontSize: fontSize * 0.5,
+                          compact: !_showUi,
                         );
                       }
                       return _buildLine(displaySong.lines[index - 1], fontSize);
