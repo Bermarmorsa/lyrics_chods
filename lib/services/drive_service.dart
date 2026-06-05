@@ -109,24 +109,31 @@ class DriveService {
   ///
   /// Devuelve null si falla la descarga o el parseo.
   static Future<Song?> downloadSong(DriveFile file) async {
+    // Finding 5: rechazar archivos excesivamente grandes antes de descargar
+    const maxBytes = 2 * 1024 * 1024; // 2 MB
+    if (file.sizeBytes != null && file.sizeBytes! > maxBytes) {
+      throw Exception(
+          'Archivo demasiado grande (${file.formattedSize}). Máximo 2 MB.');
+    }
+
     final client = await _buildAuthClient();
     try {
       final driveApi = drive.DriveApi(client);
 
-      // DownloadOptions.fullMedia → descarga el contenido binario del archivo
       final response = await driveApi.files.get(
         file.id,
         downloadOptions: drive.DownloadOptions.fullMedia,
       ) as drive.Media;
 
-      // Leer todo el stream en memoria
       final bytes = await response.stream
           .fold<List<int>>([], (buf, chunk) => buf..addAll(chunk));
 
-      // Decodificar como UTF-8 (allowMalformed para tolerar BOM u otros)
-      final content = utf8.decode(bytes, allowMalformed: true);
+      // Finding 5: segunda comprobación sobre el contenido real descargado
+      if (bytes.length > maxBytes) {
+        throw Exception('Contenido descargado excede el límite de 2 MB.');
+      }
 
-      // Guardar en el directorio persistente de la app
+      final content = utf8.decode(bytes, allowMalformed: true);
       final destPath = await _saveToDocuments(file.name, content);
 
       return ChordProParser.parse(content, filePath: destPath);
@@ -157,14 +164,40 @@ class DriveService {
   /// Guarda [content] como archivo de texto en `documents/songs/[fileName]`.
   /// Si el archivo ya existe, lo sobreescribe (equivale a "actualizar desde Drive").
   static Future<String> _saveToDocuments(String fileName, String content) async {
+    // Finding 1: sanitizar nombre de archivo para evitar path traversal
+    final safeName = _sanitizeFileName(fileName);
+    if (safeName.isEmpty) {
+      throw Exception('Nombre de archivo inválido: "$fileName"');
+    }
+
     final docsDir = await getApplicationDocumentsDirectory();
     final songsDir = Directory('${docsDir.path}/songs');
     if (!await songsDir.exists()) {
       await songsDir.create(recursive: true);
     }
-    final destPath = '${songsDir.path}/$fileName';
+
+    final destPath = '${songsDir.path}/$safeName';
+
+    // Verificar que la ruta resultante sigue dentro de songs/
+    final resolved = File(destPath).absolute.path;
+    if (!resolved.startsWith(songsDir.absolute.path)) {
+      throw Exception('Ruta de destino fuera del directorio permitido.');
+    }
+
     await File(destPath).writeAsString(content, flush: true);
     return destPath;
+  }
+
+  /// Extrae el nombre base y elimina caracteres peligrosos para el sistema de archivos.
+  static String _sanitizeFileName(String name) {
+    // Quedarse solo con el segmento final (sin directorios)
+    final base = name.split(RegExp(r'[/\\]')).last;
+    // Eliminar caracteres no seguros
+    final safe = base
+        .replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_')
+        .trim();
+    // Limitar longitud
+    return safe.length > 255 ? safe.substring(0, 255) : safe;
   }
 }
 

@@ -44,8 +44,9 @@ class FileService {
       if (sourcePath == null) continue;
 
       try {
-        // Copiar al directorio persistente de la app
-        final destPath = '${destDir.path}/${pickedFile.name}';
+        final safeName = _sanitizeFileName(pickedFile.name);
+        if (safeName.isEmpty) continue;
+        final destPath = '${destDir.path}/$safeName';
         await File(sourcePath).copy(destPath);
 
         // Parsear desde la copia permanente
@@ -70,6 +71,14 @@ class FileService {
   /// [filePath] debe ser la ruta a la copia en `documents/songs/`.
   static Future<Song?> loadSong(String filePath) async {
     try {
+      // Finding 3: verificar que la ruta está dentro del directorio de la app
+      final docsDir = (await getApplicationDocumentsDirectory()).path;
+      final resolved = File(filePath).absolute.path;
+      if (!resolved.startsWith(docsDir)) {
+        debugPrint('[FileService] Ruta fuera del directorio permitido: $filePath');
+        return null;
+      }
+
       final file = File(filePath);
       if (!await file.exists()) {
         debugPrint('[FileService] Archivo no encontrado: $filePath');
@@ -102,9 +111,13 @@ class FileService {
         : parsed.title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '').trim();
     var filePath = '${destDir.path}/$base.cho';
     var counter = 1;
-    while (await File(filePath).exists()) {
+    // Finding 11: límite de iteraciones para evitar bucle infinito
+    while (await File(filePath).exists() && counter <= 999) {
       filePath = '${destDir.path}/${base}_$counter.cho';
       counter++;
+    }
+    if (counter > 999) {
+      throw Exception('Demasiados archivos con el mismo nombre base: "$base"');
     }
     await File(filePath).writeAsString(content);
     return ChordProParser.parse(content, filePath: filePath);
@@ -122,5 +135,14 @@ class FileService {
       await songsDir.create(recursive: true);
     }
     return songsDir;
+  }
+
+  /// Extrae el nombre base y elimina caracteres peligrosos para el sistema de archivos.
+  static String _sanitizeFileName(String name) {
+    final base = name.split(RegExp(r'[/\\]')).last;
+    final safe = base
+        .replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_')
+        .trim();
+    return safe.length > 255 ? safe.substring(0, 255) : safe;
   }
 }

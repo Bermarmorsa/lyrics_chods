@@ -25,10 +25,12 @@ class ConcertEvent {
       };
 
   factory ConcertEvent.fromMap(Map<dynamic, dynamic> map) => ConcertEvent(
-        elapsedMs: map['t'] as int,
-        type: _typeFromString(map['type'] as String),
-        songIndex: map['songIndex'] as int,
-        scrollFraction: (map['scrollFraction'] as num).toDouble(),
+        elapsedMs: ((map['t'] as num?)?.toInt() ?? 0).clamp(0, 86400000),
+        type: _typeFromString((map['type'] as String?) ?? ''),
+        songIndex: ((map['songIndex'] as num?)?.toInt() ?? 0).clamp(0, 999),
+        scrollFraction:
+            ((map['scrollFraction'] as num?)?.toDouble() ?? 0.0)
+                .clamp(0.0, 1.0),
       );
 
   static String _typeToString(ConcertEventType t) => switch (t) {
@@ -88,17 +90,33 @@ class ConcertRecording {
         'events': events.map((e) => e.toMap()).toList(),
       };
 
-  factory ConcertRecording.fromMap(Map<dynamic, dynamic> map) =>
-      ConcertRecording(
-        id: map['id'] as String,
-        name: map['name'] as String,
-        setlistId: map['setlistId'] as String,
-        setlistName: map['setlistName'] as String,
-        songTitles: List<String>.from(map['songTitles'] as List),
-        startTime: DateTime.parse(map['startTime'] as String),
-        durationMs: map['durationMs'] as int,
-        events: (map['events'] as List)
-            .map((e) => ConcertEvent.fromMap(e as Map))
-            .toList(),
-      );
+  factory ConcertRecording.fromMap(Map<dynamic, dynamic> map) {
+    String _cap(String? s, int max) {
+      final v = (s ?? '').trim();
+      return v.length > max ? v.substring(0, max) : v;
+    }
+
+    final rawId = (map['id'] as String?) ??
+        DateTime.now().millisecondsSinceEpoch.toString();
+
+    return ConcertRecording(
+      id: rawId,
+      name: _cap(map['name'] as String?, 200).isEmpty
+          ? 'Concierto'
+          : _cap(map['name'] as String?, 200),
+      setlistId: _cap(map['setlistId'] as String?, 200),
+      setlistName: _cap(map['setlistName'] as String?, 200),
+      songTitles: ((map['songTitles'] as List?) ?? [])
+          .map((e) => _cap(e?.toString(), 200))
+          .toList(),
+      startTime: map['startTime'] != null
+          ? (DateTime.tryParse(map['startTime'] as String) ?? DateTime.now())
+          : DateTime.now(),
+      durationMs:
+          ((map['durationMs'] as num?)?.toInt() ?? 0).clamp(0, 86400000),
+      events: ((map['events'] as List?) ?? [])
+          .map((e) => ConcertEvent.fromMap(e as Map))
+          .toList(),
+    );
+  }
 }

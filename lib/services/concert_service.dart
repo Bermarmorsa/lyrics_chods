@@ -11,6 +11,15 @@ import 'package:file_picker/file_picker.dart';
 import '../models/concert_recording.dart';
 
 class ConcertService {
+  // Solo caracteres seguros para nombres de archivo
+  static final _safeIdRegex = RegExp(r'^[a-zA-Z0-9_\-]{1,64}$');
+
+  static void _validateId(String id) {
+    if (!_safeIdRegex.hasMatch(id)) {
+      throw FormatException('ID de concierto inválido: $id');
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Directorio de conciertos
   // ---------------------------------------------------------------------------
@@ -27,6 +36,7 @@ class ConcertService {
   // ---------------------------------------------------------------------------
 
   static Future<void> save(ConcertRecording recording) async {
+    _validateId(recording.id);
     final dir = await _concertsDir();
     final file = File('${dir.path}/${recording.id}.concert');
     await file.writeAsString(
@@ -66,6 +76,7 @@ class ConcertService {
   // ---------------------------------------------------------------------------
 
   static Future<void> delete(String id) async {
+    _validateId(id);
     final dir = await _concertsDir();
     final file = File('${dir.path}/$id.concert');
     if (await file.exists()) await file.delete();
@@ -113,16 +124,17 @@ class ConcertService {
       final raw = await File(filePath).readAsString();
       final map = jsonDecode(raw) as Map<dynamic, dynamic>;
 
-      // Validar que es un archivo de concierto
       if (!map.containsKey('events') || !map.containsKey('songTitles')) {
         return null;
       }
 
       final recording = ConcertRecording.fromMap(map);
 
-      // Guardar con nuevo ID para evitar colisiones si ya existe
+      // Finding 2: validar id antes de usarlo para construir rutas
+      _validateId(recording.id);
+
       final existing = await _fileForId(recording.id);
-      if (await existing.exists()) return recording; // ya importado
+      if (await existing.exists()) return recording;
 
       await save(recording);
       return recording;

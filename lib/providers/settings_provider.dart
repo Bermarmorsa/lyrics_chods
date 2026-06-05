@@ -68,10 +68,17 @@ class AppSettings {
             map['pedalNextKey'] as String?),
         prevKey: PedalSettings.keyFromString(
             map['pedalPrevKey'] as String?, isPrev: true),
-        scrollMode: PedalScrollMode
-            .values[(map['pedalScrollMode'] as int?) ?? 0],
+        // Finding 10: guard para evitar RangeError si el índice no existe
+        scrollMode: () {
+          final i = (map['pedalScrollMode'] as int?) ?? 0;
+          return (i >= 0 && i < PedalScrollMode.values.length)
+              ? PedalScrollMode.values[i]
+              : PedalScrollMode.byAmount;
+        }(),
+        // Finding 9: clamp para evitar valores fuera del rango válido
         scrollFraction:
-            (map['pedalScrollFraction'] as num?)?.toDouble() ?? 0.85,
+            ((map['pedalScrollFraction'] as num?)?.toDouble() ?? 0.85)
+                .clamp(0.1, 1.0),
       ),
     );
   }

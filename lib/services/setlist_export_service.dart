@@ -94,7 +94,11 @@ class SetlistExportService {
     final raw = await File(filePath).readAsString();
     final data = jsonDecode(raw) as Map<String, dynamic>;
 
-    final name = data['name'] as String? ?? 'Setlist importado';
+    // Finding 7: limitar longitud del nombre
+    final rawName = (data['name'] as String? ?? 'Setlist importado').trim();
+    final name = rawName.isEmpty
+        ? 'Setlist importado'
+        : rawName.substring(0, rawName.length.clamp(0, 200));
     final songsJson = (data['songs'] as List<dynamic>?) ?? [];
 
     final destDir = await _getSongsDirectory();
@@ -105,7 +109,8 @@ class SetlistExportService {
     for (final item in songsJson) {
       final map = item as Map<String, dynamic>;
       final content = map['content'] as String? ?? '';
-      if (content.isEmpty) continue;
+      // Finding 4: rechazar contenidos vacíos o excesivamente grandes (~500 KB)
+      if (content.isEmpty || content.length > 500000) continue;
 
       final title = (map['title'] as String? ?? 'Sin título')
           .replaceAll(RegExp(r'[<>:"/\\|?*]'), '')
@@ -114,12 +119,18 @@ class SetlistExportService {
       // Buscar una ruta libre para el archivo .cho
       var destPath = '${destDir.path}/$title.cho';
       var counter = 1;
-      while (await File(destPath).exists()) {
+      // Finding 11: límite de iteraciones
+      while (await File(destPath).exists() && counter <= 999) {
         final existing = await File(destPath).readAsString();
         if (existing.trim() == content.trim()) break; // mismo contenido, reusar
         destPath = '${destDir.path}/${title}_$counter.cho';
         counter++;
       }
+      if (counter > 999) continue;
+
+      // Finding 3: verificar que la ruta resultante está dentro de destDir
+      final resolved = File(destPath).absolute.path;
+      if (!resolved.startsWith(destDir.absolute.path)) continue;
 
       // Comprobar si ya está en la biblioteca por ID
       final songId = destPath.hashCode.abs().toString();
