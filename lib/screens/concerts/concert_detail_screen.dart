@@ -203,10 +203,10 @@ class _ChartPainter extends CustomPainter {
       // Etiqueta a la izquierda del eje con margen generoso (right-align dentro de 52px)
       _drawText(
         canvas, '$pct%',
-        Offset(_left - 56, y - 5),
+        Offset(_left - 46, y - 5),
         style: labelStyle,
         align: TextAlign.right,
-        maxWidth: 50,
+        maxWidth: 44,
       );
     }
 
