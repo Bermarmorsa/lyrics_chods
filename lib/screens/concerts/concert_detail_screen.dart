@@ -1,5 +1,6 @@
 // lib/screens/concerts/concert_detail_screen.dart
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -143,11 +144,16 @@ class _ConcertChart extends StatelessWidget {
 class _ChartPainter extends CustomPainter {
   final ConcertRecording recording;
 
-  // Márgenes del área de gráfica dentro del canvas
-  static const double _left = 52.0;
+  // Márgenes del área de gráfica — _left amplio para etiquetas Y sin solapar el eje
+  static const double _left = 62.0;
   static const double _right = 16.0;
   static const double _top = 16.0;
-  static const double _bottom = 48.0;
+  static const double _bottom = 52.0;
+
+  // Colores de etiquetas y rejilla más claros para mejor visibilidad
+  static const _labelColor = Color(0xFFCCCCCC);
+  static const _gridColor = Color(0xFF484848);
+  static const _axisColor = Color(0xFF686868);
 
   _ChartPainter({required this.recording});
 
@@ -158,7 +164,6 @@ class _ChartPainter extends CustomPainter {
     final totalSongs = recording.songTitles.length;
     final maxT = recording.durationMs > 0 ? recording.durationMs : 1;
 
-    // Punto de inicio implícito (t=0, canción 0, scroll 0)
     final allEvents = [
       ConcertEvent(
         elapsedMs: 0,
@@ -169,9 +174,6 @@ class _ChartPainter extends CustomPainter {
       ...recording.events,
     ];
 
-    // ---------------------------------------------------------------------------
-    // Helpers de conversión coordenadas
-    // ---------------------------------------------------------------------------
     double toX(int ms) => _left + (ms / maxT) * chartW;
     double toY(int songIndex, double frac) {
       final progress =
@@ -180,49 +182,53 @@ class _ChartPainter extends CustomPainter {
     }
 
     // ---------------------------------------------------------------------------
-    // Fondo del área de gráfica
+    // Fondo
     // ---------------------------------------------------------------------------
-    final bgPaint = Paint()..color = const Color(0xFF1A1A1A);
     canvas.drawRect(
-        Rect.fromLTWH(_left, _top, chartW, chartH), bgPaint);
+      Rect.fromLTWH(_left, _top, chartW, chartH),
+      Paint()..color = const Color(0xFF1A1A1A),
+    );
 
     // ---------------------------------------------------------------------------
-    // Líneas de cuadrícula Y (0%, 25%, 50%, 75%, 100%)
+    // Líneas de cuadrícula Y + etiquetas de porcentaje
     // ---------------------------------------------------------------------------
     final gridPaint = Paint()
-      ..color = const Color(0xFF2A2A2A)
+      ..color = _gridColor
       ..strokeWidth = 1;
-    final labelStyle = const TextStyle(
-        color: ViewerColors.separator, fontSize: 10);
+    const labelStyle = TextStyle(color: _labelColor, fontSize: 10);
 
     for (final pct in [0, 25, 50, 75, 100]) {
       final y = _top + chartH - (pct / 100) * chartH;
-      canvas.drawLine(
-          Offset(_left, y), Offset(_left + chartW, y), gridPaint);
-      _drawText(canvas, '$pct%', Offset(_left - 6, y - 5),
-          style: labelStyle, align: TextAlign.right, maxWidth: 40);
+      canvas.drawLine(Offset(_left, y), Offset(_left + chartW, y), gridPaint);
+      // Etiqueta a la izquierda del eje con margen generoso (right-align dentro de 52px)
+      _drawText(
+        canvas, '$pct%',
+        Offset(_left - 56, y - 5),
+        style: labelStyle,
+        align: TextAlign.right,
+        maxWidth: 50,
+      );
     }
 
     // ---------------------------------------------------------------------------
-    // Etiqueta eje Y
+    // Etiqueta eje Y (rotada)
     // ---------------------------------------------------------------------------
     _drawRotatedText(
       canvas,
       'avance setlist',
-      Offset(10, _top + chartH / 2),
-      style: const TextStyle(color: ViewerColors.separator, fontSize: 10),
+      Offset(8, _top + chartH / 2),
+      style: const TextStyle(color: _labelColor, fontSize: 10),
     );
 
     // ---------------------------------------------------------------------------
-    // Líneas verticales en cambios de canción + etiquetas
+    // Líneas verticales de cambio de canción + nombres en vertical
     // ---------------------------------------------------------------------------
     final songChangePaint = Paint()
       ..color = const Color(0xFFEEEEEE)
       ..strokeWidth = 2;
 
-    final songChangeEvents = allEvents
-        .where((e) => e.type == ConcertEventType.songChange)
-        .toList();
+    final songChangeEvents =
+        allEvents.where((e) => e.type == ConcertEventType.songChange).toList();
 
     for (final event in songChangeEvents) {
       final x = toX(event.elapsedMs);
@@ -231,16 +237,17 @@ class _ChartPainter extends CustomPainter {
         Offset(x, _top + chartH),
         songChangePaint,
       );
-      // Etiqueta del nombre de la canción
       final title = event.songIndex < recording.songTitles.length
           ? recording.songTitles[event.songIndex]
           : 'canción ${event.songIndex + 1}';
-      _drawText(
+      // Nombre en vertical: rotado -90° a la derecha de la línea, leyendo de abajo a arriba
+      _drawVerticalText(
         canvas,
         title,
-        Offset(x + 3, _top + 2),
-        style: const TextStyle(color: ViewerColors.artist, fontSize: 9),
-        maxWidth: 70,
+        x,
+        _top,
+        _top + chartH,
+        style: const TextStyle(color: _labelColor, fontSize: 9),
       );
     }
 
@@ -267,32 +274,34 @@ class _ChartPainter extends CustomPainter {
     }
     canvas.drawPath(path, linePaint);
 
-    // Puntos en cada evento
+    // Puntos en cada pedalazo
     final dotPaint = Paint()
       ..color = ViewerColors.chord
       ..style = PaintingStyle.fill;
     for (final event in allEvents) {
       if (event.type == ConcertEventType.songChange) continue;
       canvas.drawCircle(
-        Offset(toX(event.elapsedMs),
-            toY(event.songIndex, event.scrollFraction)),
+        Offset(toX(event.elapsedMs), toY(event.songIndex, event.scrollFraction)),
         3,
         dotPaint,
       );
     }
 
     // ---------------------------------------------------------------------------
-    // Eje X — marcas de tiempo
+    // Eje X — línea base + marcas de tiempo
     // ---------------------------------------------------------------------------
+    final axisPaint = Paint()
+      ..color = _axisColor
+      ..strokeWidth = 1;
+
+    canvas.drawLine(
+      Offset(_left, _top + chartH),
+      Offset(_left + chartW, _top + chartH),
+      axisPaint,
+    );
+
     final totalMinutes = maxT / 60000;
     final tickInterval = _niceTickInterval(totalMinutes);
-    final axisPaint = Paint()
-      ..color = const Color(0xFF3A3A3A)
-      ..strokeWidth = 1;
-    canvas.drawLine(
-        Offset(_left, _top + chartH),
-        Offset(_left + chartW, _top + chartH),
-        axisPaint);
 
     double t = 0;
     while (t <= totalMinutes + 0.001) {
@@ -302,8 +311,8 @@ class _ChartPainter extends CustomPainter {
       _drawText(
         canvas,
         t == 0 ? '0 min' : '${t.toStringAsFixed(0)} min',
-        Offset(x - 14, y + 8),
-        style: const TextStyle(color: ViewerColors.separator, fontSize: 9),
+        Offset(x - 16, y + 8),
+        style: const TextStyle(color: _labelColor, fontSize: 9),
         maxWidth: 40,
       );
       t += tickInterval;
@@ -319,7 +328,10 @@ class _ChartPainter extends CustomPainter {
     );
   }
 
-  // Calcula un intervalo de marcas agradable para el eje X
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
   double _niceTickInterval(double totalMinutes) {
     if (totalMinutes <= 5) return 1;
     if (totalMinutes <= 15) return 2;
@@ -344,17 +356,40 @@ class _ChartPainter extends CustomPainter {
     tp.paint(canvas, offset);
   }
 
+  /// Texto rotado -90° centrado en [center] — para la etiqueta del eje Y.
   void _drawRotatedText(Canvas canvas, String text, Offset center,
       {required TextStyle style}) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
-
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(-3.14159 / 2);
+    canvas.rotate(-math.pi / 2);
     tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
+    canvas.restore();
+  }
+
+  /// Nombre de canción en vertical: a la derecha de la línea [x], leyendo de abajo a arriba.
+  void _drawVerticalText(
+    Canvas canvas,
+    String text,
+    double x,
+    double yTop,
+    double yBottom, {
+    required TextStyle style,
+  }) {
+    final maxLen = (yBottom - yTop - 8).clamp(20.0, 200.0);
+    final tp = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxLen);
+
+    canvas.save();
+    // Situar el origen en (x+3, yBottom-4) y rotar -90° para que el texto suba
+    canvas.translate(x + 3 + tp.height, yBottom - 4);
+    canvas.rotate(-math.pi / 2);
+    tp.paint(canvas, const Offset(0, 0));
     canvas.restore();
   }
 
