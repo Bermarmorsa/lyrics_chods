@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'library/library_screen.dart';
 import 'setlists/setlists_screen.dart';
+import 'concerts/concerts_screen.dart';
 
 /// Pantalla raíz de la app: envuelve las dos pestañas principales con
 /// un [NavigationBar] en la parte inferior.
@@ -24,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _screens = <Widget>[
     LibraryScreen(),
     SetlistsScreen(),
+    ConcertsScreen(),
   ];
 
   @override
@@ -52,6 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.queue_music_outlined),
             selectedIcon: Icon(Icons.queue_music),
             label: 'Setlists',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.mic_none_outlined),
+            selectedIcon: Icon(Icons.mic),
+            label: 'Conciertos',
           ),
         ],
       ),

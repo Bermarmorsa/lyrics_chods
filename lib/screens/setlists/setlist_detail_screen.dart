@@ -7,6 +7,7 @@ import '../../models/setlist.dart';
 import '../../models/song_summary.dart';
 import '../../providers/setlists_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../providers/recording_provider.dart';
 import '../../services/file_service.dart';
 import '../../services/setlist_export_service.dart';
 import '../viewer/viewer_screen.dart';
@@ -21,8 +22,17 @@ class SetlistDetailScreen extends ConsumerStatefulWidget {
       _SetlistDetailScreenState();
 }
 
-class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen> {
+class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
+    with SingleTickerProviderStateMixin {
   final Set<String> _selectedIds = {};
+
+  // Animación de pulso para el botón de grabación activa
+  late final AnimationController _pulseController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  )..repeat(reverse: true);
+  late final Animation<double> _pulseAnim =
+      Tween<double>(begin: 0.5, end: 1.0).animate(_pulseController);
 
   bool get _selectionMode => _selectedIds.isNotEmpty;
 
@@ -42,6 +52,12 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen> {
 
   void _cancelSelection() {
     setState(() => _selectedIds.clear());
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
   }
 
   // ---------------------------------------------------------------------------
@@ -124,6 +140,10 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen> {
     List<SongSummary?> songs,
     List<SongSummary> library,
   ) {
+    final recording = ref.watch(recordingProvider);
+    final isThisSetlist = recording.setlistId == setlist.id;
+    final recActive = isThisSetlist && recording.isActive;
+
     return AppBar(
       backgroundColor: ViewerColors.background,
       foregroundColor: ViewerColors.title,
@@ -145,6 +165,43 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen> {
             tooltip: 'Empezar desde el principio',
             onPressed: () => _openSongAt(context, setlist, songs, 0),
           ),
+          // Botones de grabación
+          if (!recActive)
+            // Estado idle: botón grabar
+            IconButton(
+              icon: const Icon(Icons.fiber_manual_record,
+                  color: Colors.redAccent),
+              tooltip: 'Grabar concierto',
+              onPressed: () => _startRecording(setlist, songs),
+            )
+          else ...[
+            // Estado recording/paused: pause o resume + stop
+            if (recording.isRecording)
+              IconButton(
+                icon: FadeTransition(
+                  opacity: _pulseAnim,
+                  child: const Icon(Icons.pause_circle_outline,
+                      color: Colors.amber),
+                ),
+                tooltip: 'Pausar grabación',
+                onPressed: () =>
+                    ref.read(recordingProvider.notifier).pauseRecording(),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.play_circle_outline,
+                    color: Colors.green),
+                tooltip: 'Reanudar grabación',
+                onPressed: () =>
+                    ref.read(recordingProvider.notifier).resumeRecording(),
+              ),
+            IconButton(
+              icon: const Icon(Icons.stop_circle_outlined,
+                  color: Colors.redAccent),
+              tooltip: 'Detener y guardar',
+              onPressed: () => _stopRecording(context),
+            ),
+          ],
         ],
         IconButton(
           icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
@@ -217,6 +274,92 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen> {
   // ---------------------------------------------------------------------------
   // Acciones
   // ---------------------------------------------------------------------------
+
+  void _startRecording(Setlist setlist, List<SongSummary?> songs) {
+    final titles = songs
+        .map((s) => s?.title ?? '(sin título)')
+        .toList();
+    ref.read(recordingProvider.notifier).startRecording(
+          setlistId: setlist.id,
+          setlistName: setlist.name,
+          songTitles: titles,
+        );
+  }
+
+  Future<void> _stopRecording(BuildContext context) async {
+    final recording = ref.read(recordingProvider);
+    if (!recording.isActive) return;
+
+    // Pausar mientras se escribe el nombre
+    if (recording.isRecording) {
+      ref.read(recordingProvider.notifier).pauseRecording();
+    }
+
+    final nameController = TextEditingController(
+      text: recording.setlistName,
+    );
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Guardar concierto',
+            style: TextStyle(color: ViewerColors.title)),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          style: const TextStyle(color: ViewerColors.lyric),
+          decoration: const InputDecoration(
+            labelText: 'Nombre del concierto',
+            labelStyle: TextStyle(color: ViewerColors.artist),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: ViewerColors.separator),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: ViewerColors.chord),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar',
+                style: TextStyle(color: ViewerColors.artist)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: ViewerColors.chord),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (confirmed != true) {
+      // Reanudar si el usuario cancela
+      ref.read(recordingProvider.notifier).resumeRecording();
+      return;
+    }
+
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
+      ref.read(recordingProvider.notifier).resumeRecording();
+      return;
+    }
+
+    await ref.read(recordingProvider.notifier).stopAndSave(name: name);
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Concierto "$name" guardado'),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
   Future<void> _exportSetlist(
     BuildContext context,

@@ -13,6 +13,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/chord_utils.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/library_provider.dart';
+import '../../providers/recording_provider.dart';
+import '../../models/concert_recording.dart';
 import '../../services/file_service.dart';
 import 'widgets/chord_line.dart';
 import 'widgets/song_header.dart';
@@ -410,22 +412,22 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
         (t) => t.offset > threshold,
         orElse: () => _sectionTargets.last,
       );
+      _recordPedalEvent(ConcertEventType.pedalNext, pos);
       _animateTo(next.offset);
     } else {
-      // Con auto-fit activo: avanzar 90% (10% de solape); si no, usar ajuste manual
       final settings = ref.read(settingsProvider);
       final effectiveAutoFit = widget.summary?.autoFitScreens ?? settings.autoFitScreens;
       final fraction = effectiveAutoFit != null
           ? (1 - _overlapFraction)
           : pedal.scrollFraction;
       final target = pos.pixels + pos.viewportDimension * fraction;
-      // Registrar posición de avance para la banda deslizante
       if (effectiveAutoFit != null) {
         final clamped = target.clamp(0.0, pos.maxScrollExtent);
         if (clamped > 0 && !_advanceMarkers.contains(clamped)) {
           setState(() => _advanceMarkers.add(clamped));
         }
       }
+      _recordPedalEvent(ConcertEventType.pedalNext, pos);
       _animateTo(target);
     }
   }
@@ -450,6 +452,7 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
         (t) => t.offset < threshold,
         orElse: () => _sectionTargets.first,
       );
+      _recordPedalEvent(ConcertEventType.pedalPrev, pos);
       _animateTo(prev.offset);
     } else {
       final settings = ref.read(settingsProvider);
@@ -457,6 +460,7 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
       final fraction = effectiveAutoFit != null
           ? (1 - _overlapFraction)
           : pedal.scrollFraction;
+      _recordPedalEvent(ConcertEventType.pedalPrev, pos);
       _animateTo(pos.pixels - pos.viewportDimension * fraction);
     }
   }
@@ -467,6 +471,18 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
     );
+  }
+
+  void _recordPedalEvent(ConcertEventType type, ScrollPosition pos) {
+    final sl = widget.setlistContext;
+    if (sl == null) return;
+    final maxExt = pos.maxScrollExtent;
+    final fraction = maxExt > 0 ? (pos.pixels / maxExt).clamp(0.0, 1.0) : 0.0;
+    ref.read(recordingProvider.notifier).addEvent(
+          type: type,
+          songIndex: sl.currentIndex,
+          scrollFraction: fraction,
+        );
   }
 
   // ---------------------------------------------------------------------------
@@ -517,6 +533,13 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
       setState(() => _isNavigating = false);
       return;
     }
+
+    // Registrar cambio de canción en la grabación activa
+    ref.read(recordingProvider.notifier).addEvent(
+          type: ConcertEventType.songChange,
+          songIndex: newIndex,
+          scrollFraction: 0.0,
+        );
 
     Navigator.pushReplacement(
       context,
