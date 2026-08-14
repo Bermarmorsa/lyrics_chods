@@ -1,4 +1,4 @@
-package com.example.chord_viewer
+package com.bermarmorsa.chordviewer
 
 import io.flutter.embedding.android.FlutterActivity
 

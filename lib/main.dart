@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'screens/home_screen.dart';
 import 'services/storage_service.dart';
@@ -11,6 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await StorageService.init(); // abre las cajas de canciones Y setlists
+  WakelockPlus.enable(); // pantalla siempre encendida
   runApp(const ProviderScope(child: ChordViewerApp()));
 }
 

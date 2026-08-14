@@ -35,6 +35,9 @@ dependencies:
   # pero lo declaramos explícitamente porque creamos un BaseClient propio)
   http: ^1.2.1
 
+  # Mantener pantalla encendida mientras la app está activa
+  wakelock_plus: ^1.2.10
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
