@@ -24,16 +24,21 @@ class AppSettings {
   /// null = modo manual (usa [fontSizeMultiplier] directamente).
   final int? autoFitScreens;
 
+  /// Idioma forzado: 'es', 'en', o null (usa el idioma del sistema).
+  final String? locale;
+
   const AppSettings({
     this.pedal = const PedalSettings(),
     this.fontSizeMultiplier = 1.0,
     this.autoFitScreens,
+    this.locale,
   });
 
   AppSettings copyWith({
     PedalSettings? pedal,
     double? fontSizeMultiplier,
     Object? autoFitScreens = _sentinel,
+    Object? locale = _sentinel,
   }) =>
       AppSettings(
         pedal: pedal ?? this.pedal,
@@ -41,6 +46,7 @@ class AppSettings {
         autoFitScreens: autoFitScreens == _sentinel
             ? this.autoFitScreens
             : autoFitScreens as int?,
+        locale: locale == _sentinel ? this.locale : locale as String?,
       );
 
   static const Object _sentinel = Object();
@@ -52,6 +58,7 @@ class AppSettings {
   Map<String, dynamic> toMap() => {
         'fontSizeMultiplier': fontSizeMultiplier,
         'autoFitScreens': autoFitScreens,
+        'locale': locale,
         'pedalNextKey': PedalSettings.keyToString(pedal.nextKey),
         'pedalPrevKey': PedalSettings.keyToString(pedal.prevKey),
         'pedalScrollMode': pedal.scrollMode.index,
@@ -63,6 +70,7 @@ class AppSettings {
       fontSizeMultiplier:
           (map['fontSizeMultiplier'] as num?)?.toDouble() ?? 1.0,
       autoFitScreens: map['autoFitScreens'] as int?,
+      locale: map['locale'] as String?,
       pedal: PedalSettings(
         nextKey: PedalSettings.keyFromString(
             map['pedalNextKey'] as String?),
@@ -116,6 +124,10 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void updateAutoFitScreens(int? screens) {
     _persist(state.copyWith(autoFitScreens: screens));
+  }
+
+  void updateLocale(String? locale) {
+    _persist(state.copyWith(locale: locale));
   }
 
   // ---------------------------------------------------------------------------

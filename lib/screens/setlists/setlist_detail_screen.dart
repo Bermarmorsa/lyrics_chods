@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/setlist.dart';
 import '../../models/song_summary.dart';
@@ -70,9 +71,9 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
       return Scaffold(
         backgroundColor: ViewerColors.background,
         appBar: AppBar(backgroundColor: ViewerColors.background),
-        body: const Center(
-          child: Text('Este setlist ya no existe',
-              style: TextStyle(color: ViewerColors.artist)),
+        body: Center(
+          child: Text(AppLocalizations.of(context).setlistNoLongerExists,
+              style: const TextStyle(color: ViewerColors.artist)),
         ),
       );
     }
@@ -124,7 +125,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
               backgroundColor: ViewerColors.chord,
               foregroundColor: Colors.black,
               icon: const Icon(Icons.add),
-              label: const Text('Añadir canción'),
+              label: Text(AppLocalizations.of(context).addSong),
             ),
       bottomNavigationBar: _selectionMode ? _buildSelectionBar(setlist) : null,
     );
@@ -157,22 +158,21 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
         if (setlist.songCount > 0) ...[
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Exportar setlist',
+            tooltip: AppLocalizations.of(context).exportSetlist,
             onPressed: () => _exportSetlist(context, setlist, library),
           ),
           IconButton(
             icon: const Icon(Icons.play_arrow),
-            tooltip: 'Empezar desde el principio',
+            tooltip: AppLocalizations.of(context).startFromBeginning,
             onPressed: () => _openSongAt(context, setlist, songs, 0),
           ),
           // Botones de grabación
           if (!recActive)
-            // Estado idle: botón grabar
             IconButton(
               icon: const Icon(Icons.fiber_manual_record,
                   color: Colors.redAccent),
-              tooltip: 'Grabar concierto',
-              onPressed: () => _startRecording(setlist, songs),
+              tooltip: AppLocalizations.of(context).recordConcert,
+              onPressed: () => _startRecording(context, setlist, songs),
             )
           else ...[
             // Estado recording/paused: pause o resume + stop
@@ -183,7 +183,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
                   child: const Icon(Icons.pause_circle_outline,
                       color: Colors.amber),
                 ),
-                tooltip: 'Pausar grabación',
+                tooltip: AppLocalizations.of(context).pauseRecording,
                 onPressed: () =>
                     ref.read(recordingProvider.notifier).pauseRecording(),
               )
@@ -191,21 +191,21 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
               IconButton(
                 icon: const Icon(Icons.play_circle_outline,
                     color: Colors.green),
-                tooltip: 'Reanudar grabación',
+                tooltip: AppLocalizations.of(context).resumeRecording,
                 onPressed: () =>
                     ref.read(recordingProvider.notifier).resumeRecording(),
               ),
             IconButton(
               icon: const Icon(Icons.stop_circle_outlined,
                   color: Colors.redAccent),
-              tooltip: 'Detener y guardar',
+              tooltip: AppLocalizations.of(context).stopAndSave,
               onPressed: () => _stopRecording(context),
             ),
           ],
         ],
         IconButton(
           icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-          tooltip: 'Eliminar setlist',
+          tooltip: AppLocalizations.of(context).deleteSetlist,
           onPressed: () => _showDeleteSetlistDialog(context, setlist),
         ),
       ],
@@ -222,7 +222,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
         onPressed: _cancelSelection,
       ),
       title: Text(
-        '${_selectedIds.length} seleccionada${_selectedIds.length == 1 ? '' : 's'}',
+        AppLocalizations.of(context).selectedCount(_selectedIds.length),
         style: const TextStyle(color: ViewerColors.title),
       ),
       actions: [
@@ -232,8 +232,8 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
               _selectedIds.addAll(setlist.songIds);
             });
           },
-          child: const Text('Todas',
-              style: TextStyle(color: ViewerColors.chord)),
+          child: Text(AppLocalizations.of(context).all,
+              style: const TextStyle(color: ViewerColors.chord)),
         ),
       ],
     );
@@ -258,7 +258,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
             onPressed: () => _showDeleteSelectedDialog(setlist),
             icon: const Icon(Icons.delete_outline),
             label: Text(
-              'Quitar ${_selectedIds.length} canción${_selectedIds.length == 1 ? '' : 'es'}',
+              AppLocalizations.of(context).removeSelectedCount(_selectedIds.length),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
@@ -275,9 +275,9 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
   // Acciones
   // ---------------------------------------------------------------------------
 
-  void _startRecording(Setlist setlist, List<SongSummary?> songs) {
+  void _startRecording(BuildContext context, Setlist setlist, List<SongSummary?> songs) {
     final titles = songs
-        .map((s) => s?.title ?? '(sin título)')
+        .map((s) => s?.title ?? AppLocalizations.of(context).noTitle)
         .toList();
     ref.read(recordingProvider.notifier).startRecording(
           setlistId: setlist.id,
@@ -303,14 +303,14 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Guardar concierto',
-            style: TextStyle(color: ViewerColors.title)),
+        title: Text(AppLocalizations.of(context).saveConcert,
+            style: const TextStyle(color: ViewerColors.title)),
         content: TextField(
           controller: nameController,
           autofocus: true,
           style: const TextStyle(color: ViewerColors.lyric),
-          decoration: const InputDecoration(
-            labelText: 'Nombre del concierto',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).concertName,
             labelStyle: TextStyle(color: ViewerColors.artist),
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: ViewerColors.separator),
@@ -323,13 +323,13 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar',
-                style: TextStyle(color: ViewerColors.artist)),
+            child: Text(AppLocalizations.of(context).cancel,
+                style: const TextStyle(color: ViewerColors.artist)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: ViewerColors.chord),
-            child: const Text('Guardar'),
+            child: Text(AppLocalizations.of(context).save),
           ),
         ],
       ),
@@ -354,7 +354,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Concierto "$name" guardado'),
+        content: Text(AppLocalizations.of(context).concertSavedMsg(name)),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
@@ -372,7 +372,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al exportar: $e'),
+          content: Text(AppLocalizations.of(context).errorExportingMsg(e.toString())),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -389,8 +389,8 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
     final summary = songs[index];
     if (summary == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Canción no encontrada en la biblioteca'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noSongInLibrary),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -399,8 +399,8 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
 
     if (summary.filePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Esta canción no tiene archivo local'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noLocalFileSong),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -420,8 +420,8 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
 
     if (song == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo cargar el archivo'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).noSongInLibraryFile),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -448,17 +448,16 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Eliminar setlist',
-            style: TextStyle(color: ViewerColors.title)),
+        title: Text(AppLocalizations.of(context).deleteSetlist,
+            style: const TextStyle(color: ViewerColors.title)),
         content: Text(
-          '¿Eliminar "${setlist.name}"?\n\n'
-          'Las canciones de tu biblioteca no se borrarán.',
+          AppLocalizations.of(context).deleteSetlistConfirm(setlist.name),
           style: const TextStyle(color: ViewerColors.artist),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () {
@@ -467,7 +466,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
+            child: Text(AppLocalizations.of(context).delete),
           ),
         ],
       ),
@@ -480,17 +479,16 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Quitar canciones',
-            style: TextStyle(color: ViewerColors.title)),
+        title: Text(AppLocalizations.of(context).removeSongs,
+            style: const TextStyle(color: ViewerColors.title)),
         content: Text(
-          '¿Quitar $count canción${count == 1 ? '' : 'es'} del setlist?\n\n'
-          'Las canciones no se eliminarán de la biblioteca.',
+          AppLocalizations.of(context).removeSongsConfirm(count),
           style: const TextStyle(color: ViewerColors.artist),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -504,7 +502,7 @@ class _SetlistDetailScreenState extends ConsumerState<SetlistDetailScreen>
               _cancelSelection();
             },
             style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Quitar'),
+            child: Text(AppLocalizations.of(context).removeSelected),
           ),
         ],
       ),
@@ -604,7 +602,7 @@ class _SetlistSongTile extends StatelessWidget {
               ),
             ),
       title: Text(
-        summary?.title ?? '(canción no disponible)',
+        summary?.title ?? AppLocalizations.of(context).songNotAvailable,
         style: TextStyle(
           color: isAvailable ? ViewerColors.title : ViewerColors.separator,
           fontWeight: FontWeight.w600,
@@ -627,7 +625,7 @@ class _SetlistSongTile extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.remove_circle_outline,
                       color: ViewerColors.separator, size: 20),
-                  tooltip: 'Quitar del setlist',
+                  tooltip: AppLocalizations.of(context).removeFromSetlist,
                   onPressed: onRemove,
                 ),
                 ReorderableDragStartListener(
@@ -693,9 +691,9 @@ class _AddSongsSheetState extends ConsumerState<_AddSongsSheet> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: Row(
             children: [
-              const Text(
-                'Añadir al setlist',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context).addToSetlist,
+                style: const TextStyle(
                     color: ViewerColors.title,
                     fontWeight: FontWeight.bold,
                     fontSize: 16),
@@ -711,10 +709,10 @@ class _AddSongsSheetState extends ConsumerState<_AddSongsSheet> {
         Divider(color: ViewerColors.separator, height: 1),
         Expanded(
           child: available.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'Todas las canciones ya están en este setlist',
-                    style: TextStyle(color: ViewerColors.artist),
+                    AppLocalizations.of(context).allSongsInSetlist,
+                    style: const TextStyle(color: ViewerColors.artist),
                     textAlign: TextAlign.center,
                   ),
                 )
@@ -754,7 +752,7 @@ class _AddSongsSheetState extends ConsumerState<_AddSongsSheet> {
                 onPressed: _confirm,
                 icon: const Icon(Icons.playlist_add),
                 label: Text(
-                  'Añadir ${_selected.length} canción${_selected.length == 1 ? '' : 'es'}',
+                  AppLocalizations.of(context).addSongCount(_selected.length),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ViewerColors.chord,
@@ -783,13 +781,13 @@ class _EmptySetlist extends StatelessWidget {
           const Icon(Icons.playlist_add,
               size: 64, color: ViewerColors.separator),
           const SizedBox(height: 16),
-          const Text('Setlist vacío',
-              style: TextStyle(color: ViewerColors.artist, fontSize: 16)),
+          Text(AppLocalizations.of(context).emptySetlist,
+              style: const TextStyle(color: ViewerColors.artist, fontSize: 16)),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: onAddTap,
             icon: const Icon(Icons.add),
-            label: const Text('Añadir canciones'),
+            label: Text(AppLocalizations.of(context).addSongs),
             style: OutlinedButton.styleFrom(
               foregroundColor: ViewerColors.chord,
               side: const BorderSide(color: ViewerColors.chord),

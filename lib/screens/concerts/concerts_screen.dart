@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/concert_recording.dart';
 import '../../providers/concerts_provider.dart';
@@ -22,15 +23,15 @@ class ConcertsScreen extends ConsumerWidget {
         backgroundColor: ViewerColors.background,
         foregroundColor: ViewerColors.title,
         elevation: 0,
-        title: const Text(
-          'Conciertos',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context).concerts,
+          style: const TextStyle(
               color: ViewerColors.title, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.file_download_outlined),
-            tooltip: 'Importar concierto',
+            tooltip: AppLocalizations.of(context).importConcert,
             onPressed: () => _importConcert(context, ref),
           ),
         ],
@@ -71,8 +72,8 @@ class ConcertsScreen extends ConsumerWidget {
     if (!context.mounted) return;
     if (recording == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo importar el archivo'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).couldNotImportFile),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -80,7 +81,7 @@ class ConcertsScreen extends ConsumerWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Concierto "${recording.name}" importado'),
+          content: Text(AppLocalizations.of(context).concertImportedMsg(recording.name)),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
@@ -94,16 +95,16 @@ class ConcertsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Eliminar concierto',
-            style: TextStyle(color: ViewerColors.title)),
+        title: Text(AppLocalizations.of(context).deleteConcert,
+            style: const TextStyle(color: ViewerColors.title)),
         content: Text(
-          '¿Eliminar "${recording.name}"?',
+          AppLocalizations.of(context).deleteConcertConfirm(recording.name),
           style: const TextStyle(color: ViewerColors.artist),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () {
@@ -111,7 +112,7 @@ class ConcertsScreen extends ConsumerWidget {
               ref.read(concertsProvider.notifier).delete(recording.id);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
+            child: Text(AppLocalizations.of(context).delete),
           ),
         ],
       ),
@@ -172,15 +173,15 @@ class _ConcertTile extends StatelessWidget {
           if (action == _TileAction.export) onExport();
           if (action == _TileAction.delete) onDelete();
         },
-        itemBuilder: (_) => const [
+        itemBuilder: (ctx) => [
           PopupMenuItem(
             value: _TileAction.export,
             child: Row(
               children: [
-                Icon(Icons.ios_share, color: ViewerColors.artist, size: 18),
-                SizedBox(width: 10),
-                Text('Exportar',
-                    style: TextStyle(color: ViewerColors.lyric)),
+                const Icon(Icons.ios_share, color: ViewerColors.artist, size: 18),
+                const SizedBox(width: 10),
+                Text(AppLocalizations.of(ctx).export,
+                    style: const TextStyle(color: ViewerColors.lyric)),
               ],
             ),
           ),
@@ -188,11 +189,11 @@ class _ConcertTile extends StatelessWidget {
             value: _TileAction.delete,
             child: Row(
               children: [
-                Icon(Icons.delete_outline,
+                const Icon(Icons.delete_outline,
                     color: Colors.redAccent, size: 18),
-                SizedBox(width: 10),
-                Text('Eliminar',
-                    style: TextStyle(color: Colors.redAccent)),
+                const SizedBox(width: 10),
+                Text(AppLocalizations.of(ctx).delete,
+                    style: const TextStyle(color: Colors.redAccent)),
               ],
             ),
           ),
@@ -224,20 +225,20 @@ class _EmptyConcerts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.mic_none, size: 64, color: ViewerColors.separator),
-          SizedBox(height: 16),
+          const Icon(Icons.mic_none, size: 64, color: ViewerColors.separator),
+          const SizedBox(height: 16),
           Text(
-            'Sin conciertos grabados',
-            style: TextStyle(color: ViewerColors.artist, fontSize: 16),
+            AppLocalizations.of(context).noConcertsRecorded,
+            style: const TextStyle(color: ViewerColors.artist, fontSize: 16),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'Graba un concierto desde el detalle de un setlist',
-            style: TextStyle(color: ViewerColors.separator, fontSize: 13),
+            AppLocalizations.of(context).noConcertsHint,
+            style: const TextStyle(color: ViewerColors.separator, fontSize: 13),
             textAlign: TextAlign.center,
           ),
         ],

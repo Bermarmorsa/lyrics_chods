@@ -3,6 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/song_summary.dart';
 import '../../providers/library_provider.dart';
@@ -74,13 +75,15 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         foregroundColor: ViewerColors.title,
         elevation: 0,
         title: Text(
-          isNew ? 'Nueva canción' : 'Editar canción',
+          isNew
+              ? AppLocalizations.of(context).newSongTitle
+              : AppLocalizations.of(context).editSongTitle,
           style: const TextStyle(color: ViewerColors.title, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.help_outline),
-            tooltip: 'Sintaxis ChordPro',
+            tooltip: AppLocalizations.of(context).chordProSyntax,
             onPressed: _showHelp,
           ),
           IconButton(
@@ -91,7 +94,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: ViewerColors.chord),
                   )
                 : const Icon(Icons.save_outlined),
-            tooltip: 'Guardar',
+            tooltip: AppLocalizations.of(context).save,
             onPressed: _saving ? null : _save,
           ),
         ],
@@ -110,10 +113,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                   fontSize: 14,
                   height: 1.5,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
-                  hintText: 'Escribe el contenido ChordPro…',
-                  hintStyle: TextStyle(color: ViewerColors.artist),
+                  hintText: AppLocalizations.of(context).chordProEditorHint,
+                  hintStyle: const TextStyle(color: ViewerColors.artist),
                 ),
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
@@ -137,8 +140,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Guardado correctamente'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).savedSuccessfully),
           backgroundColor: ViewerColors.chord,
           behavior: SnackBarBehavior.floating,
         ),
@@ -149,7 +152,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al guardar: $e'),
+          content: Text(AppLocalizations.of(context).errorSaving(e.toString())),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -198,11 +201,11 @@ class _HelpSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Sintaxis ChordPro',
-              style: TextStyle(
+              AppLocalizations.of(context).chordProSyntax,
+              style: const TextStyle(
                 color: ViewerColors.title,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -214,33 +217,33 @@ class _HelpSheet extends StatelessWidget {
             child: ListView(
               controller: scroll,
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-              children: const [
-                _HelpSection('Metadatos'),
-                _HelpRow('{title: Nombre}', 'Título de la canción'),
-                _HelpRow('{artist: Artista}', 'Artista o banda'),
-                _HelpRow('{key: Am}', 'Tonalidad original'),
-                _HelpRow('{capo: 2}', 'Cejilla en traste 2'),
-                _HelpRow('{tempo: 120}', 'Tempo en BPM'),
-                SizedBox(height: 16),
-                _HelpSection('Acordes'),
-                _HelpRow('[G]', 'Acorde encima de la sílaba'),
-                _HelpRow('[Am7]', 'Acorde con sufijo'),
-                _HelpRow('[C/E]', 'Acorde con bajo específico'),
-                _HelpRow('[F#m]', 'Acorde con sostenido o bemol'),
-                SizedBox(height: 16),
-                _HelpSection('Secciones'),
-                _HelpRow('{sop: Verso}', 'Sección con nombre personalizado'),
-                _HelpRow('{verse}', 'Verso estándar'),
-                _HelpRow('{chorus}', 'Estribillo estándar'),
-                _HelpRow('{bridge}', 'Puente'),
-                _HelpRow('{sop: Intro}', 'Introducción'),
-                SizedBox(height: 16),
-                _HelpSection('Otros'),
-                _HelpRow('{comment: texto}', 'Línea de comentario'),
-                _HelpRow('# texto', 'Comentario (ignorado al parsear)'),
-                SizedBox(height: 16),
-                _HelpSection('Ejemplo completo'),
-                _ExampleBox(),
+              children: [
+                _HelpSection(AppLocalizations.of(context).metadata),
+                _HelpRow('{title: Nombre}', AppLocalizations.of(context).songTitleLabel),
+                _HelpRow('{artist: Artista}', AppLocalizations.of(context).artistOrBand),
+                _HelpRow('{key: Am}', AppLocalizations.of(context).originalKey),
+                _HelpRow('{capo: 2}', AppLocalizations.of(context).capoOnFret),
+                _HelpRow('{tempo: 120}', AppLocalizations.of(context).tempoInBpm),
+                const SizedBox(height: 16),
+                _HelpSection(AppLocalizations.of(context).chords),
+                _HelpRow('[G]', AppLocalizations.of(context).chordAboveSyllable),
+                _HelpRow('[Am7]', AppLocalizations.of(context).chordWithSuffix),
+                _HelpRow('[C/E]', AppLocalizations.of(context).chordWithBass),
+                _HelpRow('[F#m]', AppLocalizations.of(context).chordWithSharpFlat),
+                const SizedBox(height: 16),
+                _HelpSection(AppLocalizations.of(context).sections),
+                _HelpRow('{sop: Verso}', AppLocalizations.of(context).sectionWithName),
+                _HelpRow('{verse}', AppLocalizations.of(context).standardVerse),
+                _HelpRow('{chorus}', AppLocalizations.of(context).standardChorus),
+                _HelpRow('{bridge}', AppLocalizations.of(context).bridge),
+                _HelpRow('{sop: Intro}', AppLocalizations.of(context).introduction),
+                const SizedBox(height: 16),
+                _HelpSection(AppLocalizations.of(context).other),
+                _HelpRow('{comment: texto}', AppLocalizations.of(context).commentLine),
+                _HelpRow('# texto', AppLocalizations.of(context).commentIgnored),
+                const SizedBox(height: 16),
+                _HelpSection(AppLocalizations.of(context).fullExample),
+                const _ExampleBox(),
               ],
             ),
           ),

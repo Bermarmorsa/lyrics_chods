@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/drive_file.dart';
 import '../../providers/drive_provider.dart';
@@ -60,11 +61,10 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
             style: TextStyle(
                 color: ViewerColors.title, fontWeight: FontWeight.bold)),
         actions: [
-          // Recargar lista — solo si conectado
           if (driveAsync.valueOrNull?.isConnected == true)
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Actualizar lista',
+              tooltip: AppLocalizations.of(context).refreshList,
               onPressed: () =>
                   ref.read(driveProvider.notifier).loadFiles(),
             ),
@@ -98,26 +98,24 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
             const Icon(Icons.cloud_off,
                 size: 72, color: ViewerColors.separator),
             const SizedBox(height: 20),
-            const Text(
-              'Conecta con Google Drive',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context).connectToGoogleDrive,
+              style: const TextStyle(
                   color: ViewerColors.title,
                   fontSize: 18,
                   fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Importa tus archivos .cho y .chordpro\ndirectamente desde tu Drive.\n\n'
-              'La app solo lee archivos — nunca\nmodifica tu Drive.',
-              style:
-                  TextStyle(color: ViewerColors.artist, fontSize: 14),
+            Text(
+              AppLocalizations.of(context).driveConnectHint,
+              style: const TextStyle(color: ViewerColors.artist, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: _signIn,
               icon: const Icon(Icons.login),
-              label: const Text('Conectar con Google'),
+              label: Text(AppLocalizations.of(context).connectWithGoogle),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ViewerColors.chord,
                 foregroundColor: Colors.black,
@@ -165,7 +163,7 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
             child: Row(
               children: [
                 Text(
-                  '${filtered.length} archivo${filtered.length == 1 ? '' : 's'} en Drive',
+                  AppLocalizations.of(context).fileCountInDrive(filtered.length),
                   style: const TextStyle(
                       color: ViewerColors.artist, fontSize: 12),
                 ),
@@ -175,8 +173,8 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
                     onPressed: () => _importAll(filtered),
                     icon: const Icon(Icons.download_for_offline,
                         size: 16, color: ViewerColors.chord),
-                    label: const Text('Importar todos',
-                        style: TextStyle(
+                    label: Text(AppLocalizations.of(context).importAll,
+                        style: const TextStyle(
                             color: ViewerColors.chord, fontSize: 13)),
                   ),
               ],
@@ -188,15 +186,14 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
         // Lista de archivos
         Expanded(
           child: state.isLoadingFiles
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Buscando archivos en Drive…',
-                          style:
-                              TextStyle(color: ViewerColors.artist)),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(AppLocalizations.of(context).searchingInDrive,
+                          style: const TextStyle(color: ViewerColors.artist)),
                     ],
                   ),
                 )
@@ -206,9 +203,9 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
                           ref.read(driveProvider.notifier).loadFiles(),
                     )
                   : filtered.isEmpty
-                      ? const Center(
-                          child: Text('Sin resultados',
-                              style: TextStyle(
+                      ? Center(
+                          child: Text(AppLocalizations.of(context).noResults,
+                              style: const TextStyle(
                                   color: ViewerColors.artist)),
                         )
                       : ListView.separated(
@@ -239,7 +236,7 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error al conectar: $e'),
+          content: Text(AppLocalizations.of(context).errorConnecting(e.toString())),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ));
@@ -271,8 +268,8 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(ok
-            ? 'Importado: ${file.name}'
-            : 'No se pudo parsear ${file.name}'),
+            ? AppLocalizations.of(context).importedFile(file.name)
+            : AppLocalizations.of(context).couldNotParseFile(file.name)),
         backgroundColor:
             ok ? ViewerColors.chord : Colors.orange,
         behavior: SnackBarBehavior.floating,
@@ -281,7 +278,7 @@ class _DriveScreenState extends ConsumerState<DriveScreen> {
       if (!mounted) return;
       setState(() => _importingIds.remove(file.id));
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Error importando ${file.name}: $e'),
+        content: Text(AppLocalizations.of(context).errorImportingFile(file.name, e.toString())),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ));
@@ -352,7 +349,7 @@ class _AccountHeader extends StatelessWidget {
             style: TextButton.styleFrom(
                 foregroundColor: Colors.redAccent,
                 padding: const EdgeInsets.symmetric(horizontal: 8)),
-            child: const Text('Desconectar', style: TextStyle(fontSize: 12)),
+            child: Text(AppLocalizations.of(context).disconnect, style: const TextStyle(fontSize: 12)),
           ),
         ],
       ),
@@ -375,7 +372,7 @@ class _SearchBar extends StatelessWidget {
         onChanged: onChanged,
         style: const TextStyle(color: ViewerColors.lyric),
         decoration: InputDecoration(
-          hintText: 'Buscar en Drive…',
+          hintText: AppLocalizations.of(context).searchInDrive,
           hintStyle: const TextStyle(color: ViewerColors.artist),
           prefixIcon:
               const Icon(Icons.search, color: ViewerColors.artist),
@@ -443,7 +440,7 @@ class _DriveFileTile extends StatelessWidget {
               : IconButton(
                   icon: const Icon(Icons.download,
                       color: ViewerColors.chord),
-                  tooltip: 'Importar a la biblioteca',
+                  tooltip: AppLocalizations.of(context).importToLibrary,
                   onPressed: onImport,
                 ),
     );
@@ -464,21 +461,21 @@ class _EmptyDriveBody extends StatelessWidget {
           const Icon(Icons.cloud_done,
               size: 64, color: ViewerColors.separator),
           const SizedBox(height: 16),
-          const Text('No se encontraron archivos .cho o .chordpro',
-              style: TextStyle(
+          Text(AppLocalizations.of(context).noChordProFiles,
+              style: const TextStyle(
                   color: ViewerColors.artist, fontSize: 14),
               textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          const Text(
-              'Sube tus archivos ChordPro a Google Drive\ny vuelve a intentarlo.',
-              style: TextStyle(
+          Text(
+              AppLocalizations.of(context).uploadToGoogleDriveHint,
+              style: const TextStyle(
                   color: ViewerColors.separator, fontSize: 13),
               textAlign: TextAlign.center),
           const SizedBox(height: 20),
           OutlinedButton.icon(
             onPressed: onRefresh,
             icon: const Icon(Icons.refresh),
-            label: const Text('Buscar de nuevo'),
+            label: Text(AppLocalizations.of(context).searchAgain),
             style: OutlinedButton.styleFrom(
               foregroundColor: ViewerColors.chord,
               side: const BorderSide(color: ViewerColors.chord),
@@ -517,7 +514,7 @@ class _ErrorBody extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                   foregroundColor: ViewerColors.chord,
                   side: const BorderSide(color: ViewerColors.chord)),
-              child: const Text('Reintentar'),
+              child: Text(AppLocalizations.of(context).retry),
             ),
           ],
         ),

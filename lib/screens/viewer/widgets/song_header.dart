@@ -1,8 +1,9 @@
 // lib/screens/viewer/widgets/song_header.dart
 
 import 'package:flutter/material.dart';
-import '../../../models/song.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../models/song.dart';
 
 /// Muestra el título, artista y metadatos opcionales (tonalidad, cejilla)
 /// de la canción al inicio de la pantalla de visualización.
@@ -20,7 +21,7 @@ class SongHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (compact) return _buildCompact();
+    if (compact) return _buildCompact(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -41,11 +42,11 @@ class SongHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildCompact() {
+  Widget _buildCompact(BuildContext context) {
     final parts = <String>[song.title];
     if (song.artist.isNotEmpty) parts.add(song.artist);
     if (song.key != null) parts.add(song.key!);
-    if (song.capo > 0) parts.add('Cejilla ${song.capo}');
+    if (song.capo > 0) parts.add(AppLocalizations.of(context).capoCompact(song.capo));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -84,9 +85,9 @@ class _MetaChips extends StatelessWidget {
       spacing: 12,
       children: [
         if (song.key != null)
-          _MetaChip(label: 'Tonalidad: ${song.key}', fontSize: fontSize),
+          _MetaChip(label: '${AppLocalizations.of(context).keyLabel}: ${song.key}', fontSize: fontSize),
         if (song.capo > 0)
-          _MetaChip(label: 'Cejilla: ${song.capo}', fontSize: fontSize),
+          _MetaChip(label: '${AppLocalizations.of(context).capoLabel}: ${song.capo}', fontSize: fontSize),
         if (song.tempo != null)
           _MetaChip(label: '${song.tempo} BPM', fontSize: fontSize),
       ],

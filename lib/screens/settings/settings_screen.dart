@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/pedal_settings.dart';
 import '../../providers/settings_provider.dart';
@@ -28,54 +29,63 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: ViewerColors.background,
         foregroundColor: ViewerColors.title,
         elevation: 0,
-        title: const Text(
-          'Ajustes',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context).settings,
+          style: const TextStyle(
               color: ViewerColors.title, fontWeight: FontWeight.bold),
         ),
       ),
-      body: ListView(
-        children: [
-          // ── VISUALIZACIÓN ──────────────────────────────────────────────
-          _SectionHeader('Visualización'),
-          _FontSizeTile(settings: settings, ref: ref),
+      body: Builder(builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return ListView(
+          children: [
+            // ── VISUALIZACIÓN ────────────────────────────────────────────
+            _SectionHeader(l10n.display),
+            _FontSizeTile(settings: settings, ref: ref),
 
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-          // ── PEDAL BLUETOOTH ────────────────────────────────────────────
-          _SectionHeader('Pedal Bluetooth'),
-          _KeyPickerRow(
-            label: 'Tecla para avanzar',
-            hint: 'Pie derecho / botón principal',
-            currentKey: settings.pedal.nextKey,
-            onChanged: (key) => ref
-                .read(settingsProvider.notifier)
-                .updatePedalSettings(settings.pedal.copyWith(nextKey: key)),
-          ),
-          Divider(height: 1, indent: 20, color: ViewerColors.separator),
-          _KeyPickerRow(
-            label: 'Tecla para retroceder',
-            hint: 'Pie izquierdo (si el pedal lo tiene)',
-            currentKey: settings.pedal.prevKey,
-            onChanged: (key) => ref
-                .read(settingsProvider.notifier)
-                .updatePedalSettings(settings.pedal.copyWith(prevKey: key)),
-          ),
-          Divider(height: 1, indent: 20, color: ViewerColors.separator),
-          _ScrollModeTile(settings: settings, ref: ref),
-          if (settings.pedal.scrollMode == PedalScrollMode.byAmount)
-            _ScrollFractionTile(settings: settings, ref: ref),
-          _PedalInfoBanner(),
+            // ── PEDAL BLUETOOTH ──────────────────────────────────────────
+            _SectionHeader(l10n.bluetoothPedal),
+            _KeyPickerRow(
+              label: l10n.forwardKey,
+              hint: l10n.forwardKeyHint,
+              currentKey: settings.pedal.nextKey,
+              onChanged: (key) => ref
+                  .read(settingsProvider.notifier)
+                  .updatePedalSettings(settings.pedal.copyWith(nextKey: key)),
+            ),
+            Divider(height: 1, indent: 20, color: ViewerColors.separator),
+            _KeyPickerRow(
+              label: l10n.backwardKey,
+              hint: l10n.backwardKeyHint,
+              currentKey: settings.pedal.prevKey,
+              onChanged: (key) => ref
+                  .read(settingsProvider.notifier)
+                  .updatePedalSettings(settings.pedal.copyWith(prevKey: key)),
+            ),
+            Divider(height: 1, indent: 20, color: ViewerColors.separator),
+            _ScrollModeTile(settings: settings, ref: ref),
+            if (settings.pedal.scrollMode == PedalScrollMode.byAmount)
+              _ScrollFractionTile(settings: settings, ref: ref),
+            const _PedalInfoBanner(),
 
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-          // ── ACERCA DE ──────────────────────────────────────────────────
-          _SectionHeader('Acerca de'),
-          _AboutTile(),
+            // ── IDIOMA ───────────────────────────────────────────────────
+            _SectionHeader(l10n.language),
+            _LanguageTile(settings: settings, ref: ref),
 
-          const SizedBox(height: 32),
-        ],
-      ),
+            const SizedBox(height: 8),
+
+            // ── ACERCA DE ────────────────────────────────────────────────
+            _SectionHeader(l10n.about),
+            const _AboutTile(),
+
+            const SizedBox(height: 32),
+          ],
+        );
+      }),
     );
   }
 }
@@ -106,20 +116,20 @@ class _FontSizeTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Tamaño de letra',
-                  style: TextStyle(color: ViewerColors.lyric, fontSize: 15)),
+              Text(AppLocalizations.of(context).fontSize,
+                  style: const TextStyle(color: ViewerColors.lyric, fontSize: 15)),
               const SizedBox(height: 10),
               SegmentedButton<bool>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: false,
-                    icon: Icon(Icons.tune, size: 16),
-                    label: Text('Manual'),
+                    icon: const Icon(Icons.tune, size: 16),
+                    label: Text(AppLocalizations.of(context).manual),
                   ),
                   ButtonSegment(
                     value: true,
-                    icon: Icon(Icons.fit_screen, size: 16),
-                    label: Text('Auto-ajuste'),
+                    icon: const Icon(Icons.fit_screen, size: 16),
+                    label: Text(AppLocalizations.of(context).autoFit),
                   ),
                 ],
                 selected: {isAuto},
@@ -156,8 +166,8 @@ class _FontSizeTile extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Tamaño',
-                    style: TextStyle(color: ViewerColors.artist, fontSize: 13)),
+                Text(AppLocalizations.of(context).size,
+                    style: const TextStyle(color: ViewerColors.artist, fontSize: 13)),
                 _ValueBadge('${mult.toStringAsFixed(1)}×'),
               ],
             ),
@@ -195,14 +205,14 @@ class _FontSizeTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Pantallas por canción',
-                  style: TextStyle(color: ViewerColors.artist, fontSize: 13),
+                Text(
+                  AppLocalizations.of(context).screensPerSong,
+                  style: const TextStyle(color: ViewerColors.artist, fontSize: 13),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'El tamaño de letra se ajustará al abrir cada canción\npara que quepa en el número de pantallas elegido.',
-                  style: TextStyle(color: ViewerColors.separator, fontSize: 12),
+                Text(
+                  AppLocalizations.of(context).screensPerSongHint,
+                  style: const TextStyle(color: ViewerColors.separator, fontSize: 12),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -325,7 +335,7 @@ class _KeyPickerRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                PedalSettings.keyLabel(currentKey),
+                AppLocalizations.of(context).pedalKeyLabel(currentKey),
                 style: const TextStyle(
                     color: ViewerColors.chord,
                     fontWeight: FontWeight.w600,
@@ -402,7 +412,7 @@ class _KeyPickerSheet extends StatelessWidget {
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 24),
               title: Text(
-                PedalSettings.keyLabel(key),
+                AppLocalizations.of(context).pedalKeyLabel(key),
                 style: TextStyle(
                   color: key == currentKey
                       ? ViewerColors.chord
@@ -443,30 +453,29 @@ class _ScrollModeTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Modo de desplazamiento',
+          Text(AppLocalizations.of(context).scrollMode,
               style:
-                  TextStyle(color: ViewerColors.lyric, fontSize: 15)),
+                  const TextStyle(color: ViewerColors.lyric, fontSize: 15)),
           const SizedBox(height: 4),
           Text(
             isBySection
-                ? 'El pedal salta al siguiente Verso, Estribillo…'
-                : 'El pedal avanza un porcentaje de la pantalla',
+                ? AppLocalizations.of(context).scrollModeSectionDesc
+                : AppLocalizations.of(context).scrollModePageDesc,
             style: const TextStyle(
                 color: ViewerColors.separator, fontSize: 12),
           ),
           const SizedBox(height: 12),
-          // SegmentedButton — Material 3
           SegmentedButton<PedalScrollMode>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: PedalScrollMode.byAmount,
-                icon: Icon(Icons.swap_vert, size: 16),
-                label: Text('Por página'),
+                icon: const Icon(Icons.swap_vert, size: 16),
+                label: Text(AppLocalizations.of(context).byPage),
               ),
               ButtonSegment(
                 value: PedalScrollMode.bySection,
-                icon: Icon(Icons.playlist_play, size: 16),
-                label: Text('Por sección'),
+                icon: const Icon(Icons.playlist_play, size: 16),
+                label: Text(AppLocalizations.of(context).bySection),
               ),
             ],
             selected: {settings.pedal.scrollMode},
@@ -508,7 +517,7 @@ class _ScrollFractionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (settings.pedal.scrollFraction * 100).round();
-    final label = pct >= 100 ? 'Página completa' : '$pct%';
+    final label = pct >= 100 ? AppLocalizations.of(context).fullPage : '$pct%';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
@@ -518,15 +527,15 @@ class _ScrollFractionTile extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Avance por pulsación',
-                  style: TextStyle(
+              Text(AppLocalizations.of(context).advancePerPress,
+                  style: const TextStyle(
                       color: ViewerColors.lyric, fontSize: 15)),
               _ValueBadge(label),
             ],
           ),
-          const Text(
-            'Porcentaje de pantalla que avanza al pisar el pedal',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context).advancePerPressHint,
+            style: const TextStyle(
                 color: ViewerColors.separator, fontSize: 12),
           ),
           _StyledSlider(
@@ -560,18 +569,16 @@ class _PedalInfoBanner extends StatelessWidget {
         border: Border.all(
             color: ViewerColors.chord.withValues(alpha: 0.25)),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline,
+          const Icon(Icons.info_outline,
               color: ViewerColors.chord, size: 15),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Para probar sin pedal: abre la pantalla de la canción '
-              'y pulsa las teclas del teclado del ordenador '
-              'conectado por cable OTG, o usa el emulador de Android.',
-              style: TextStyle(
+              AppLocalizations.of(context).pedalTestHint,
+              style: const TextStyle(
                   color: ViewerColors.artist, fontSize: 12),
             ),
           ),
@@ -608,27 +615,25 @@ class _AboutTile extends StatelessWidget {
                     color: ViewerColors.chord, size: 26),
               ),
               const SizedBox(width: 14),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Chord Viewer',
+                  const Text('Chord Viewer',
                       style: TextStyle(
                           color: ViewerColors.title,
                           fontWeight: FontWeight.bold,
                           fontSize: 16)),
-                  Text('Versión 1.0.0',
-                      style: TextStyle(
+                  Text(AppLocalizations.of(context).version,
+                      style: const TextStyle(
                           color: ViewerColors.artist, fontSize: 13)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _infoRow(Icons.description_outlined,
-              'Formato: ChordPro (.cho, .chordpro)'),
-          _infoRow(Icons.bluetooth,
-              'Pedal: cualquier dispositivo HID Bluetooth'),
-          _infoRow(Icons.cloud_outlined, 'Sincronización: Google Drive'),
+          _infoRow(Icons.description_outlined, AppLocalizations.of(context).formatInfo),
+          _infoRow(Icons.bluetooth, AppLocalizations.of(context).pedalInfo),
+          _infoRow(Icons.cloud_outlined, AppLocalizations.of(context).syncInfo),
         ],
       ),
     );
@@ -644,6 +649,75 @@ class _AboutTile extends StatelessWidget {
           Text(text,
               style: const TextStyle(
                   color: ViewerColors.separator, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Idioma
+// =============================================================================
+
+class _LanguageTile extends StatelessWidget {
+  final AppSettings settings;
+  final WidgetRef ref;
+
+  const _LanguageTile({required this.settings, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final current = settings.locale; // null = auto, 'es', 'en'
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SegmentedButton<String?>(
+            segments: [
+              ButtonSegment(
+                value: null,
+                icon: const Icon(Icons.phone_android, size: 16),
+                label: Text(l10n.languageAuto),
+              ),
+              const ButtonSegment(
+                value: 'es',
+                icon: Icon(Icons.language, size: 16),
+                label: Text('Español'),
+              ),
+              const ButtonSegment(
+                value: 'en',
+                icon: Icon(Icons.language, size: 16),
+                label: Text('English'),
+              ),
+            ],
+            selected: {current},
+            onSelectionChanged: (sel) =>
+                ref.read(settingsProvider.notifier).updateLocale(sel.first),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.resolveWith((s) {
+                if (s.contains(WidgetState.selected)) {
+                  return ViewerColors.chord.withValues(alpha: 0.18);
+                }
+                return const Color(0xFF1E1E1E);
+              }),
+              foregroundColor: WidgetStateProperty.resolveWith((s) {
+                if (s.contains(WidgetState.selected)) return ViewerColors.chord;
+                return ViewerColors.artist;
+              }),
+              side: WidgetStateProperty.all(
+                  BorderSide(color: ViewerColors.separator)),
+            ),
+          ),
+          if (current == null) ...[
+            const SizedBox(height: 6),
+            Text(
+              l10n.languageAutoHint,
+              style: const TextStyle(color: ViewerColors.separator, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );

@@ -1,6 +1,7 @@
 // lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
+import '../core/l10n/app_localizations.dart';
 import 'library/library_screen.dart';
 import 'setlists/setlists_screen.dart';
 import 'concerts/concerts_screen.dart';
@@ -44,21 +45,21 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         backgroundColor: const Color(0xFF1A1A1A),
         indicatorColor: const Color(0x33FFB300), // ámbar semitransparente
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music),
-            label: 'Biblioteca',
+            icon: const Icon(Icons.library_music_outlined),
+            selectedIcon: const Icon(Icons.library_music),
+            label: AppLocalizations.of(context).library,
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.queue_music_outlined),
             selectedIcon: Icon(Icons.queue_music),
             label: 'Setlists',
           ),
           NavigationDestination(
-            icon: Icon(Icons.mic_none_outlined),
-            selectedIcon: Icon(Icons.mic),
-            label: 'Conciertos',
+            icon: const Icon(Icons.mic_none_outlined),
+            selectedIcon: const Icon(Icons.mic),
+            label: AppLocalizations.of(context).concerts,
           ),
         ],
       ),

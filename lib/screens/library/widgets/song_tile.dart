@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../models/song_summary.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../models/song_summary.dart';
 import '../../../providers/library_provider.dart';
 import '../../editor/editor_screen.dart';
 
@@ -54,7 +55,7 @@ class SongTile extends ConsumerWidget {
       // Menú de opciones (solo eliminar por ahora)
       trailing: IconButton(
         icon: Icon(Icons.more_vert, color: ViewerColors.artist, size: 20),
-        tooltip: 'Opciones',
+        tooltip: AppLocalizations.of(context).options,
         onPressed: () => _showOptions(context, ref),
       ),
 
@@ -77,8 +78,8 @@ class SongTile extends ConsumerWidget {
             if (summary.filePath != null)
               ListTile(
                 leading: const Icon(Icons.edit_outlined, color: ViewerColors.section),
-                title: const Text('Editar canción',
-                    style: TextStyle(color: ViewerColors.lyric)),
+                title: Text(AppLocalizations.of(context).editSong,
+                    style: const TextStyle(color: ViewerColors.lyric)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
@@ -91,8 +92,8 @@ class SongTile extends ConsumerWidget {
               ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('Eliminar de la biblioteca',
-                  style: TextStyle(color: Colors.redAccent)),
+              title: Text(AppLocalizations.of(context).removeFromLibrary,
+                  style: const TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(context);
                 _showDeleteDialog(context, ref);
@@ -109,17 +110,16 @@ class SongTile extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Eliminar canción',
-            style: TextStyle(color: ViewerColors.title)),
+        title: Text(AppLocalizations.of(context).deleteSong,
+            style: const TextStyle(color: ViewerColors.title)),
         content: Text(
-          '¿Eliminar "${summary.title}" de la biblioteca?\n\n'
-          'El archivo del dispositivo no se borrará.',
+          AppLocalizations.of(context).deleteSongConfirm(summary.title),
           style: const TextStyle(color: ViewerColors.artist),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () {
@@ -127,7 +127,7 @@ class SongTile extends ConsumerWidget {
               Navigator.pop(ctx);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
+            child: Text(AppLocalizations.of(context).delete),
           ),
         ],
       ),

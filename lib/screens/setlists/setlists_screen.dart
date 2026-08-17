@@ -3,6 +3,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/setlists_provider.dart';
 import '../../providers/library_provider.dart';
@@ -35,7 +36,7 @@ class SetlistsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.download_outlined),
-            tooltip: 'Importar setlist',
+            tooltip: AppLocalizations.of(context).importSetlist,
             onPressed: () => _importSetlist(context, ref),
           ),
         ],
@@ -58,7 +59,7 @@ class SetlistsScreen extends ConsumerWidget {
         backgroundColor: ViewerColors.chord,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
-        label: const Text('Nuevo setlist'),
+        label: Text(AppLocalizations.of(context).newSetlist),
       ),
     );
   }
@@ -97,9 +98,8 @@ class SetlistsScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '"${importResult.name}" importado · '
-            '${importResult.added} nueva${importResult.added == 1 ? '' : 's'}'
-            '${importResult.skipped > 0 ? ', ${importResult.skipped} ya existía${importResult.skipped == 1 ? '' : 'n'}' : ''}',
+            AppLocalizations.of(context).setlistImportedMsg(
+              importResult.name, importResult.added, importResult.skipped),
           ),
           backgroundColor: ViewerColors.chord,
           behavior: SnackBarBehavior.floating,
@@ -109,7 +109,7 @@ class SetlistsScreen extends ConsumerWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al importar: $e'),
+          content: Text(AppLocalizations.of(context).errorImporting(e.toString())),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -135,11 +135,12 @@ class SetlistsScreen extends ConsumerWidget {
   // ---------------------------------------------------------------------------
 
   void _showCreateDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     _showNameDialog(
       context: context,
-      title: 'Nuevo setlist',
-      hint: 'Concierto Madrid, Ensayo martes…',
-      confirmLabel: 'Crear',
+      title: l10n.newSetlist,
+      hint: l10n.newSetlistHint,
+      confirmLabel: l10n.create,
       onConfirm: (name) async {
         await ref.read(setlistsProvider.notifier).createSetlist(name);
       },
@@ -158,8 +159,8 @@ class SetlistsScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.edit_outlined,
                   color: ViewerColors.section),
-              title: const Text('Renombrar',
-                  style: TextStyle(color: ViewerColors.lyric)),
+              title: Text(AppLocalizations.of(context).rename,
+                  style: const TextStyle(color: ViewerColors.lyric)),
               onTap: () {
                 Navigator.pop(context);
                 _showRenameDialog(context, ref, setlist);
@@ -168,8 +169,8 @@ class SetlistsScreen extends ConsumerWidget {
             ListTile(
               leading:
                   const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('Eliminar',
-                  style: TextStyle(color: Colors.redAccent)),
+              title: Text(AppLocalizations.of(context).delete,
+                  style: const TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(context);
                 _showDeleteDialog(context, ref, setlist);
@@ -183,12 +184,13 @@ class SetlistsScreen extends ConsumerWidget {
 
   void _showRenameDialog(
       BuildContext context, WidgetRef ref, Setlist setlist) {
+    final l10n = AppLocalizations.of(context);
     _showNameDialog(
       context: context,
-      title: 'Renombrar setlist',
+      title: l10n.renameSetlist,
       initialValue: setlist.name,
-      hint: 'Nombre del setlist',
-      confirmLabel: 'Guardar',
+      hint: l10n.setlistName,
+      confirmLabel: l10n.save,
       onConfirm: (name) async {
         await ref
             .read(setlistsProvider.notifier)
@@ -203,17 +205,16 @@ class SetlistsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Eliminar setlist',
-            style: TextStyle(color: ViewerColors.title)),
+        title: Text(AppLocalizations.of(context).deleteSetlist,
+            style: const TextStyle(color: ViewerColors.title)),
         content: Text(
-          '¿Eliminar "${setlist.name}"?\n\n'
-          'Las canciones de tu biblioteca no se borrarán.',
+          AppLocalizations.of(context).deleteSetlistConfirm(setlist.name),
           style: const TextStyle(color: ViewerColors.artist),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () {
@@ -224,7 +225,7 @@ class SetlistsScreen extends ConsumerWidget {
             },
             style:
                 TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('Eliminar'),
+            child: Text(AppLocalizations.of(context).delete),
           ),
         ],
       ),
@@ -270,7 +271,7 @@ class SetlistsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           TextButton(
             onPressed: () {
@@ -327,7 +328,7 @@ class _SetlistTile extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        '${setlist.songCount} canción${setlist.songCount == 1 ? '' : 'es'}',
+        AppLocalizations.of(context).songCount(setlist.songCount),
         style: const TextStyle(color: ViewerColors.artist, fontSize: 13),
       ),
       trailing: const Icon(Icons.chevron_right,
@@ -354,25 +355,24 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.queue_music_outlined,
                 size: 64, color: ViewerColors.separator),
             const SizedBox(height: 16),
-            const Text(
-              'Sin setlists aún',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context).noSetlistsYet,
+              style: const TextStyle(
                   color: ViewerColors.artist,
                   fontSize: 16,
                   fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Crea tu primer setlist para\norganizar el repertorio de un concierto',
-              style:
-                  TextStyle(color: ViewerColors.separator, fontSize: 14),
+            Text(
+              AppLocalizations.of(context).noSetlistsHint,
+              style: const TextStyle(color: ViewerColors.separator, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: onCreateTap,
               icon: const Icon(Icons.add),
-              label: const Text('Crear setlist'),
+              label: Text(AppLocalizations.of(context).createSetlist),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ViewerColors.chord,
                 side: const BorderSide(color: ViewerColors.chord),

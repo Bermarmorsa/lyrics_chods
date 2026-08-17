@@ -11,8 +11,9 @@ import '../../models/setlist.dart';
 import '../../models/pedal_settings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/chord_utils.dart';
-import '../../providers/settings_provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../providers/library_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/recording_provider.dart';
 import '../../models/concert_recording.dart';
 import '../../services/file_service.dart';
@@ -316,13 +317,13 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
         if (sl != null) ...[
           IconButton(
             icon: const Icon(Icons.skip_previous),
-            tooltip: 'Canción anterior',
+            tooltip: AppLocalizations.of(context).prevSong,
             onPressed:
                 sl.hasPrev && !_isNavigating ? _goToPrevSong : null,
           ),
           IconButton(
             icon: const Icon(Icons.skip_next),
-            tooltip: 'Siguiente canción',
+            tooltip: AppLocalizations.of(context).nextSong,
             onPressed:
                 sl.hasNext && !_isNavigating ? _goToNextSong : null,
           ),
@@ -338,7 +339,7 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
         _PedalModeChip(settings: settings.pedal),
         IconButton(
           icon: const Icon(Icons.fullscreen),
-          tooltip: 'Modo inmersivo',
+          tooltip: AppLocalizations.of(context).immersiveMode,
           onPressed: _toggleImmersive,
         ),
       ],
@@ -504,14 +505,14 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
     final library = ref.read(libraryProvider);
     final matches = library.where((s) => s.id == songId);
     if (matches.isEmpty) {
-      _showError('Canción no encontrada en la biblioteca');
+      _showError(AppLocalizations.of(context).songNotFoundInLibrary);
       setState(() => _isNavigating = false);
       return;
     }
     final summary = matches.first;
 
     if (summary.filePath == null) {
-      _showError('Esta canción no tiene archivo local');
+      _showError(AppLocalizations.of(context).noLocalFile);
       setState(() => _isNavigating = false);
       return;
     }
@@ -529,7 +530,7 @@ class _ViewerScreenState extends ConsumerState<ViewerScreen> {
     Navigator.pop(context);
 
     if (song == null) {
-      _showError('No se pudo cargar el archivo');
+      _showError(AppLocalizations.of(context).couldNotLoadFile);
       setState(() => _isNavigating = false);
       return;
     }
@@ -653,7 +654,7 @@ class _TransposeBar extends StatelessWidget {
           _BarIconButton(
             icon: Icons.remove,
             onTap: onDecrement,
-            tooltip: '−1 semitono',
+            tooltip: AppLocalizations.of(context).semitoneDown,
           ),
 
           // Indicador central — muestra el offset y la tonalidad resultante
@@ -679,7 +680,7 @@ class _TransposeBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _buildLabel(sign),
+                    _buildLabel(sign, context),
                     style: TextStyle(
                       color: isTransposed
                           ? ViewerColors.chord
@@ -702,7 +703,7 @@ class _TransposeBar extends StatelessWidget {
           _BarIconButton(
             icon: Icons.add,
             onTap: onIncrement,
-            tooltip: '+1 semitono',
+            tooltip: AppLocalizations.of(context).semitoneUp,
           ),
 
           const SizedBox(width: 8),
@@ -719,7 +720,9 @@ class _TransposeBar extends StatelessWidget {
                 border: Border.all(color: ViewerColors.separator),
               ),
               child: Text(
-                useFlats ? '♭ bemoles' : '♯ sost.',
+                useFlats
+                    ? AppLocalizations.of(context).flats
+                    : AppLocalizations.of(context).sharps,
                 style: const TextStyle(
                     color: ViewerColors.artist, fontSize: 12),
               ),
@@ -730,9 +733,8 @@ class _TransposeBar extends StatelessWidget {
     );
   }
 
-  String _buildLabel(String sign) {
-    if (transpose == 0) return '0 semit.';
-    // Si tenemos tonalidad: mostrar "G → A (+2)"
+  String _buildLabel(String sign, BuildContext context) {
+    if (transpose == 0) return AppLocalizations.of(context).zeroSemitones;
     if (originalKey != null && transposedKey != null && transpose != 0) {
       return '$originalKey → $transposedKey ($sign$transpose)';
     }
@@ -811,7 +813,9 @@ class _PedalModeChip extends StatelessWidget {
                   size: 14, color: ViewerColors.chord),
               const SizedBox(width: 4),
               Text(
-                isBySection ? 'Sección' : 'Página',
+                isBySection
+                    ? AppLocalizations.of(context).sectionMode
+                    : AppLocalizations.of(context).pageMode,
                 style: const TextStyle(
                     color: ViewerColors.chord,
                     fontSize: 11,
@@ -1062,11 +1066,11 @@ class _AutoFitChip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: Text(
-                'Pantallas para esta canción',
-                style: TextStyle(
+                AppLocalizations.of(context).screensForSong,
+                style: const TextStyle(
                   color: ViewerColors.title,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -1080,7 +1084,7 @@ class _AutoFitChip extends StatelessWidget {
                 color: songAutoFit == null ? ViewerColors.chord : ViewerColors.artist,
               ),
               title: Text(
-                'Usar ajuste global${globalAutoFit != null ? ' ($globalAutoFit pantallas)' : ' (manual)'}',
+                AppLocalizations.of(context).useGlobalSetting(globalAutoFit),
                 style: TextStyle(
                   color: songAutoFit == null ? ViewerColors.chord : ViewerColors.lyric,
                   fontWeight: songAutoFit == null ? FontWeight.bold : FontWeight.normal,
@@ -1105,7 +1109,7 @@ class _AutoFitChip extends StatelessWidget {
                   color: selected ? ViewerColors.section : ViewerColors.artist,
                 ),
                 title: Text(
-                  '$n ${n == 1 ? 'pantalla' : 'pantallas'}',
+                  AppLocalizations.of(context).screenCount(n),
                   style: TextStyle(
                     color: selected ? ViewerColors.section : ViewerColors.lyric,
                     fontWeight: selected ? FontWeight.bold : FontWeight.normal,

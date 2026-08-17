@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/song_summary.dart';
 import '../../providers/library_provider.dart';
@@ -74,7 +75,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Ajustes',
+            tooltip: AppLocalizations.of(context).settings,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -111,7 +112,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onPressed: _newSong,
             backgroundColor: ViewerColors.section,
             foregroundColor: Colors.white,
-            tooltip: 'Nueva canción',
+            tooltip: AppLocalizations.of(context).newSong,
             child: const Icon(Icons.edit_note),
           ),
           const SizedBox(height: 10),
@@ -128,7 +129,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         strokeWidth: 2, color: Colors.black),
                   )
                 : const Icon(Icons.add),
-            label: Text(_isImporting ? 'Importando…' : 'Importar'),
+            label: Text(_isImporting
+                ? AppLocalizations.of(context).importing
+                : AppLocalizations.of(context).import_),
           ),
         ],
       ),
@@ -152,13 +155,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final count =
           await ref.read(libraryProvider.notifier).importSongs();
       if (mounted && count > 0) {
-        _showSnackBar('$count canción${count == 1 ? '' : 'es'} importada${count == 1 ? '' : 's'}');
+        _showSnackBar(AppLocalizations.of(context).importedCount(count));
       } else if (mounted && count == 0) {
         // El usuario canceló o todos los archivos ya estaban importados
         // No mostramos mensaje para no interrumpir el flujo
       }
     } catch (e) {
-      if (mounted) _showSnackBar('Error al importar: $e', isError: true);
+      if (mounted) _showSnackBar(AppLocalizations.of(context).errorImporting(e.toString()), isError: true);
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
@@ -166,7 +169,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Future<void> _openSong(SongSummary summary) async {
     if (summary.filePath == null) {
-      _showSnackBar('Esta canción no tiene archivo local', isError: true);
+      _showSnackBar(AppLocalizations.of(context).noLocalFile, isError: true);
       return;
     }
 
@@ -184,10 +187,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     Navigator.pop(context); // cerrar el indicador de carga
 
     if (song == null) {
-      _showSnackBar(
-        'No se encontró el archivo. ¿Fue movido o borrado?',
-        isError: true,
-      );
+      _showSnackBar(AppLocalizations.of(context).fileNotFound, isError: true);
       return;
     }
 
@@ -227,7 +227,7 @@ class _SearchBar extends StatelessWidget {
         onChanged: onChanged,
         style: const TextStyle(color: ViewerColors.lyric),
         decoration: InputDecoration(
-          hintText: 'Buscar por título o artista…',
+          hintText: AppLocalizations.of(context).searchHint,
           hintStyle: const TextStyle(color: ViewerColors.artist),
           prefixIcon: const Icon(Icons.search, color: ViewerColors.artist),
           suffixIcon: controller.text.isNotEmpty
@@ -293,8 +293,8 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               hasQuery
-                  ? 'Sin resultados para la búsqueda'
-                  : 'Tu biblioteca está vacía',
+                  ? AppLocalizations.of(context).noSearchResults
+                  : AppLocalizations.of(context).libraryEmpty,
               style: const TextStyle(
                   color: ViewerColors.artist,
                   fontSize: 16,
@@ -303,9 +303,9 @@ class _EmptyState extends StatelessWidget {
             ),
             if (!hasQuery) ...[
               const SizedBox(height: 8),
-              const Text(
-                'Toca el botón "Importar" para añadir\narchivos .cho o .chordpro',
-                style: TextStyle(color: ViewerColors.separator, fontSize: 14),
+              Text(
+                AppLocalizations.of(context).libraryEmptyHint,
+                style: const TextStyle(color: ViewerColors.separator, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
             ],

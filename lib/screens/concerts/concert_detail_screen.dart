@@ -3,6 +3,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/concert_recording.dart';
 import '../../services/concert_service.dart';
@@ -28,7 +29,7 @@ class ConcertDetailScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.ios_share),
-            tooltip: 'Exportar',
+            tooltip: AppLocalizations.of(context).export,
             onPressed: () => ConcertService.exportAndShare(recording),
           ),
         ],
@@ -36,7 +37,7 @@ class ConcertDetailScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const Divider(color: Color(0xFF2A2A2A), height: 1),
           Expanded(
             child: Padding(
@@ -49,7 +50,7 @@ class ConcertDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     final duration = _formatDuration(recording.durationMs);
     final date = _formatDate(recording.startTime);
     return Padding(
@@ -63,7 +64,7 @@ class ConcertDetailScreen extends StatelessWidget {
           _InfoChip(icon: Icons.timer_outlined, label: duration),
           _InfoChip(
             icon: Icons.music_note,
-            label: '${recording.songTitles.length} canciones',
+            label: AppLocalizations.of(context).concertSongsCount(recording.songTitles.length),
           ),
         ],
       ),
@@ -124,18 +125,23 @@ class _ConcertChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (recording.events.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'Sin datos de grabación',
-          style: TextStyle(color: ViewerColors.artist),
+          AppLocalizations.of(context).noRecordingData,
+          style: const TextStyle(color: ViewerColors.artist),
         ),
       );
     }
 
+    final l10n = AppLocalizations.of(context);
     return LayoutBuilder(
       builder: (_, constraints) => CustomPaint(
         size: Size(constraints.maxWidth, constraints.maxHeight),
-        painter: _ChartPainter(recording: recording),
+        painter: _ChartPainter(
+          recording: recording,
+          setlistProgressLabel: l10n.setlistProgress,
+          songLabel: l10n.songAtIndex,
+        ),
       ),
     );
   }
@@ -143,6 +149,8 @@ class _ConcertChart extends StatelessWidget {
 
 class _ChartPainter extends CustomPainter {
   final ConcertRecording recording;
+  final String setlistProgressLabel;
+  final String Function(int) songLabel;
 
   // Márgenes del área de gráfica — _left amplio para etiquetas Y sin solapar el eje
   static const double _left = 62.0;
@@ -155,7 +163,11 @@ class _ChartPainter extends CustomPainter {
   static const _gridColor = Color(0xFF484848);
   static const _axisColor = Color(0xFF686868);
 
-  _ChartPainter({required this.recording});
+  _ChartPainter({
+    required this.recording,
+    required this.setlistProgressLabel,
+    required this.songLabel,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -215,7 +227,7 @@ class _ChartPainter extends CustomPainter {
     // ---------------------------------------------------------------------------
     _drawRotatedText(
       canvas,
-      'avance setlist',
+      setlistProgressLabel,
       Offset(8, _top + chartH / 2),
       style: const TextStyle(color: _labelColor, fontSize: 10),
     );
@@ -239,7 +251,7 @@ class _ChartPainter extends CustomPainter {
       );
       final title = event.songIndex < recording.songTitles.length
           ? recording.songTitles[event.songIndex]
-          : 'canción ${event.songIndex + 1}';
+          : songLabel(event.songIndex + 1);
       // Nombre en vertical: rotado -90° a la derecha de la línea, leyendo de abajo a arriba
       _drawVerticalText(
         canvas,
@@ -394,5 +406,6 @@ class _ChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ChartPainter old) => old.recording != recording;
+  bool shouldRepaint(_ChartPainter old) =>
+      old.recording != recording || old.setlistProgressLabel != setlistProgressLabel;
 }
