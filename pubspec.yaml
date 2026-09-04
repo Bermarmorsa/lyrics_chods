@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # Estado global (Riverpod sin generación de código)
   flutter_riverpod: ^2.5.1
