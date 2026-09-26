@@ -40,6 +40,9 @@ dependencies:
   # Mantener pantalla encendida mientras la app está activa
   wakelock_plus: ^1.2.10
 
+  # Abrir URLs en el navegador externo (política de privacidad)
+  url_launcher: ^6.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

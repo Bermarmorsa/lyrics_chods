@@ -3,10 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/pedal_settings.dart';
 import '../../providers/settings_provider.dart';
+
+const _kPrivacyPolicyUrl =
+    'https://bermarmorsa.github.io/lyrics_chods/privacy_policy.html';
 
 /// Pantalla de ajustes de la app.
 ///
@@ -81,6 +85,8 @@ class SettingsScreen extends ConsumerWidget {
             // ── ACERCA DE ────────────────────────────────────────────────
             _SectionHeader(l10n.about),
             const _AboutTile(),
+            Divider(height: 1, indent: 20, color: ViewerColors.separator),
+            const _PrivacyPolicyTile(),
 
             const SizedBox(height: 32),
           ],
@@ -650,6 +656,32 @@ class _AboutTile extends StatelessWidget {
               style: const TextStyle(
                   color: ViewerColors.separator, fontSize: 13)),
         ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Privacidad
+// =============================================================================
+
+class _PrivacyPolicyTile extends StatelessWidget {
+  const _PrivacyPolicyTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: const Icon(Icons.policy_outlined, color: ViewerColors.separator, size: 20),
+      title: Text(l10n.privacyPolicy,
+          style: const TextStyle(color: ViewerColors.lyric, fontSize: 15)),
+      subtitle: Text(l10n.privacyPolicyHint,
+          style: const TextStyle(color: ViewerColors.separator, fontSize: 12)),
+      trailing: const Icon(Icons.open_in_new, color: ViewerColors.separator, size: 16),
+      onTap: () => launchUrl(
+        Uri.parse(_kPrivacyPolicyUrl),
+        mode: LaunchMode.externalApplication,
       ),
     );
   }

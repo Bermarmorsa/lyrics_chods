@@ -160,6 +160,8 @@ class AppLocalizations {
   String get formatInfo => 'Format: ChordPro (.cho, .chordpro)';
   String get pedalInfo => _en ? 'Pedal: any Bluetooth HID device' : 'Pedal: cualquier dispositivo HID Bluetooth';
   String get syncInfo => _en ? 'Sync: Google Drive' : 'Sincronización: Google Drive';
+  String get privacyPolicy => _en ? 'Privacy Policy' : 'Política de privacidad';
+  String get privacyPolicyHint => _en ? 'View the app privacy policy' : 'Ver la política de privacidad de la app';
 
   // ---------------------------------------------------------------------------
   // Teclas del pedal
